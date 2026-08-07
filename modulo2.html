@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2. Eficiencia y pérdidas</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #24334a; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #fb923c; --accent2: #ea580c;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--text); }
+  .pill { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  .lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 20px; }
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; margin-bottom: 18px;
+  }
+  section h2 { margin: 0 0 6px; font-size: 16px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .formula {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; text-align: center; margin: 10px 0 16px;
+    font-family: "SF Mono", Menlo, monospace; color: var(--accent);
+  }
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .control label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  canvas { width: 100%; height: auto; background: var(--panel2); border-radius: 10px; border: 1px solid var(--border); display: block; }
+  .result-box { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .result { flex: 1; min-width: 140px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .result .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .result .v { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .challenge-target { font-size: 15px; margin-bottom: 10px; }
+  .challenge-target b { color: var(--accent); }
+  button {
+    background: var(--accent); color: #2a1200; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: var(--accent2); color: #fff; }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  #feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #feedback.show { display: block; }
+  #feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--ok); color: #86efac; }
+  #feedback.no { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+  .nav-end { display: flex; justify-content: space-between; margin-top: 24px; }
+  .nav-end a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .table-wrap { overflow-x: auto; margin-bottom: 16px; }
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .ref-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .ref-table td.num { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .callout { background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; margin: 12px 0; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="index.html">← Volver al mapa</a>
+    <span class="pill">Módulo 2 de 8</span>
+  </div>
+
+  <h1>📉 Eficiencia y pérdidas</h1>
+  <p class="lead">
+    Ninguna tecnología convierte el 100% del recurso en energía útil. Cada paso de la conversión (viento → giro mecánico → electricidad → transmisión)
+    pierde algo, casi siempre como calor o fricción. La <b>eficiencia</b> de cada etapa se multiplica con las demás, así que pérdidas "pequeñas" se acumulan rápido.
+  </p>
+
+  <section>
+    <h2>⛓️ Simulador: cadena de conversión de energía</h2>
+    <div class="sub">Ajusta la eficiencia de cada etapa de un aerogenerador y mira cómo se reduce la energía disponible en cada paso.</div>
+    <div class="formula">Eficiencia total = η₁ × η₂ × η₃</div>
+
+    <div class="control">
+      <label>Etapa 1 — Captación aerodinámica (aspas) <b id="e1Val">45%</b></label>
+      <input type="range" id="e1" min="20" max="59" step="1" value="45">
+    </div>
+    <div class="control">
+      <label>Etapa 2 — Transmisión mecánica (caja/eje) <b id="e2Val">92%</b></label>
+      <input type="range" id="e2" min="70" max="98" step="1" value="92">
+    </div>
+    <div class="control">
+      <label>Etapa 3 — Generador + electrónica <b id="e3Val">95%</b></label>
+      <input type="range" id="e3" min="70" max="99" step="1" value="95">
+    </div>
+
+    <canvas id="chart2" width="640" height="240"></canvas>
+
+    <div class="result-box">
+      <div class="result"><div class="k">Eficiencia total</div><div class="v" id="totalEff">39.3%</div></div>
+      <div class="result"><div class="k">De 100 kW de viento obtienes</div><div class="v" id="usefulOut">39.3 kW</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>📊 Factor de planta</h2>
+    <div class="sub">
+      Aunque un aerogenerador esté instalado con capacidad de 3 MW, no genera a esa potencia todo el tiempo (el viento varía).
+      El <b>factor de planta</b> compara la energía real generada en un año contra la que generaría si funcionara siempre al máximo.
+    </div>
+    <div class="formula">Factor de planta = Energía real anual / (Capacidad × 8760 h)</div>
+
+    <div class="control">
+      <label>Capacidad instalada <b id="capVal">3.0 MW</b></label>
+      <input type="range" id="capSlider" min="0.5" max="10" step="0.5" value="3">
+    </div>
+    <div class="control">
+      <label>Factor de planta típico <b id="fpVal">35%</b></label>
+      <input type="range" id="fpSlider" min="10" max="60" step="1" value="35">
+    </div>
+
+    <canvas id="chart2b" width="640" height="150"></canvas>
+    <div class="result-box">
+      <div class="result"><div class="k">Energía real anual</div><div class="v" id="realEnergy">9,198 MWh</div></div>
+      <div class="result"><div class="k">Si funcionara siempre al máximo</div><div class="v" id="maxEnergy">26,280 MWh</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>📋 Datos de ingeniería: eficiencia y factor de planta reales</h2>
+    <div class="sub">Números de referencia para comparar tecnologías entre sí — útiles cuando evalúes qué recurso conviene en un proyecto real.</div>
+
+    <h3 style="font-size:13.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:0 0 8px;">Eficiencia global (recurso → electricidad)</h3>
+    <div class="table-wrap">
+      <table class="ref-table">
+        <tr><th>Tecnología</th><th>Eficiencia típica</th></tr>
+        <tr><td>Solar fotovoltaica (célula)</td><td class="num">15 – 22%</td></tr>
+        <tr><td>Eólica (Cp real; límite Betz 59.3%)</td><td class="num">35 – 45%</td></tr>
+        <tr><td>Hidráulica (turbina)</td><td class="num">85 – 95%</td></tr>
+        <tr><td>Geotérmica flash</td><td class="num">10 – 17%</td></tr>
+        <tr><td>Geotérmica binaria (ORC)</td><td class="num">8 – 13%</td></tr>
+        <tr><td>Biomasa (combustión directa)</td><td class="num">20 – 40%</td></tr>
+        <tr><td>Motor de biogás (eléctrica)</td><td class="num">35 – 45%</td></tr>
+        <tr><td>Electrólisis de hidrógeno</td><td class="num">60 – 80%</td></tr>
+      </table>
+    </div>
+
+    <h3 style="font-size:13.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:16px 0 8px;">Factor de planta típico</h3>
+    <div class="table-wrap">
+      <table class="ref-table">
+        <tr><th>Tecnología</th><th>Factor de planta</th></tr>
+        <tr><td>Solar fotovoltaica</td><td class="num">15 – 25%</td></tr>
+        <tr><td>Eólica terrestre (onshore)</td><td class="num">25 – 40%</td></tr>
+        <tr><td>Eólica marina (offshore)</td><td class="num">40 – 55%</td></tr>
+        <tr><td>Hidráulica de pasada (río)</td><td class="num">40 – 60%</td></tr>
+        <tr><td>Hidráulica con embalse</td><td class="num">35 – 50%</td></tr>
+        <tr><td>Geotérmica</td><td class="num">60 – 95%</td></tr>
+        <tr><td>Biomasa</td><td class="num">50 – 85%</td></tr>
+      </table>
+    </div>
+    <div class="callout">💡 Nota cómo <b>geotérmica</b> tiene baja eficiencia de conversión (por el límite termodinámico del Módulo 6) pero altísimo factor de planta — genera casi todo el tiempo, día y noche, sin depender del clima. Por eso se considera energía de <b>base</b>, a diferencia de solar y eólica que son intermitentes.</div>
+  </section>
+
+  <section>
+    <h2>🎯 Reto: alcanza la eficiencia objetivo</h2>
+    <div class="challenge-target">Ajusta las 3 etapas del simulador de arriba para lograr una eficiencia total de <b id="targetVal">40%</b>.</div>
+    <button id="checkBtn">Comprobar</button>
+    <button class="secondary" id="newTargetBtn">Nuevo objetivo</button>
+    <div id="feedback"></div>
+  </section>
+
+  <div class="nav-end">
+    <a href="modulo1.html">← Anterior</a>
+    <a href="modulo3.html" id="nextLink" style="visibility:hidden;">Siguiente: Electricidad básica →</a>
+  </div>
+</div>
+
+<script>
+  const e1 = document.getElementById('e1'), e2 = document.getElementById('e2'), e3 = document.getElementById('e3');
+  const canvas = document.getElementById('chart2');
+  const ctx = canvas.getContext('2d');
+
+  function drawCascade(stages) {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const padT = 25, padB = 40, padL = 20, padR = 20;
+    const n = stages.length;
+    const gap = 16;
+    const barW = (w - padL - padR - gap * (n - 1)) / n;
+    const maxH = h - padT - padB;
+
+    const labels = ['Recurso\n(100%)', 'Mecánica', 'Transmisión', 'Eléctrica'];
+    const colors = ['#64748b', '#fb923c', '#f97316', '#ea580c'];
+
+    let val = 100;
+    const values = [100];
+    stages.forEach(s => { val = val * s / 100; values.push(val); });
+
+    values.forEach((v, i) => {
+      const bh = (v / 100) * maxH;
+      const x = padL + i * (barW + gap);
+      const y = padT + (maxH - bh);
+      ctx.fillStyle = colors[i];
+      ctx.fillRect(x, y, barW, bh);
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(v.toFixed(1) + '%', x + barW / 2, y - 8);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px sans-serif';
+      const lbl = labels[i].split('\n');
+      lbl.forEach((l, li) => ctx.fillText(l, x + barW / 2, padT + maxH + 16 + li * 13));
+
+      if (i > 0) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        const prevX = padL + (i - 1) * (barW + gap) + barW;
+        const prevBh = (values[i - 1] / 100) * maxH;
+        const prevY = padT + (maxH - prevBh);
+        ctx.moveTo(prevX, prevY);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+    return values[values.length - 1];
+  }
+
+  function updateCascade() {
+    const s1 = parseFloat(e1.value), s2 = parseFloat(e2.value), s3 = parseFloat(e3.value);
+    document.getElementById('e1Val').textContent = s1 + '%';
+    document.getElementById('e2Val').textContent = s2 + '%';
+    document.getElementById('e3Val').textContent = s3 + '%';
+    const total = drawCascade([s1, s2, s3]);
+    document.getElementById('totalEff').textContent = total.toFixed(1) + '%';
+    document.getElementById('usefulOut').textContent = total.toFixed(1) + ' kW';
+    return total;
+  }
+  [e1, e2, e3].forEach(s => s.addEventListener('input', updateCascade));
+  updateCascade();
+
+  // Factor de planta chart
+  const capSlider = document.getElementById('capSlider');
+  const fpSlider = document.getElementById('fpSlider');
+  const canvas2 = document.getElementById('chart2b');
+  const ctx2 = canvas2.getContext('2d');
+
+  function updateFP() {
+    const cap = parseFloat(capSlider.value);
+    const fp = parseFloat(fpSlider.value);
+    document.getElementById('capVal').textContent = cap.toFixed(1) + ' MW';
+    document.getElementById('fpVal').textContent = fp + '%';
+
+    const maxEnergy = cap * 8760;
+    const realEnergy = maxEnergy * fp / 100;
+    document.getElementById('realEnergy').textContent = Math.round(realEnergy).toLocaleString() + ' MWh';
+    document.getElementById('maxEnergy').textContent = Math.round(maxEnergy).toLocaleString() + ' MWh';
+
+    const w = canvas2.width, h = canvas2.height;
+    ctx2.clearRect(0, 0, w, h);
+    const padL = 20, padR = 20, padT = 15, barH = 40;
+    const maxW = w - padL - padR;
+
+    ctx2.fillStyle = '#334155';
+    ctx2.fillRect(padL, padT, maxW, barH);
+    ctx2.fillStyle = '#fb923c';
+    ctx2.fillRect(padL, padT, maxW * fp / 100, barH);
+
+    ctx2.fillStyle = '#e2e8f0';
+    ctx2.font = 'bold 13px sans-serif';
+    ctx2.textAlign = 'left';
+    ctx2.fillText('Real: ' + fp + '%', padL + 8, padT + barH / 2 + 5);
+    ctx2.textAlign = 'right';
+    ctx2.fillStyle = '#94a3b8';
+    ctx2.fillText('Capacidad máxima (100%)', w - padR - 8, padT - 4);
+  }
+  capSlider.addEventListener('input', updateFP);
+  fpSlider.addEventListener('input', updateFP);
+  updateFP();
+
+  // Challenge
+  let target = 40;
+  function newTarget() {
+    target = Math.round(20 + Math.random() * 35);
+    document.getElementById('targetVal').textContent = target + '%';
+    document.getElementById('feedback').className = '';
+  }
+  document.getElementById('newTargetBtn').addEventListener('click', newTarget);
+
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    const total = updateCascade();
+    const errPct = Math.abs(total - target);
+    const fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    if (errPct <= 2) {
+      const score = Math.max(60, Math.round(100 - errPct * 15));
+      fb.className = 'feedback show ok';
+      fb.textContent = `¡Bien hecho! Lograste ${total.toFixed(1)}% (objetivo: ${target}%). Puntaje: ${score}/100.`;
+      saveProgress(score);
+      document.getElementById('nextLink').style.visibility = 'visible';
+    } else {
+      fb.className = 'feedback show no';
+      fb.textContent = `Lograste ${total.toFixed(1)}%, el objetivo era ${target}% (diferencia de ${errPct.toFixed(1)} puntos). Ajusta las etapas e inténtalo de nuevo.`;
+    }
+  });
+
+  function saveProgress(score) {
+    const key = 'energia_progress';
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    const prevScore = (progress.modulo2 && progress.modulo2.score) || 0;
+    progress.modulo2 = { completed: true, score: Math.max(prevScore, score) };
+    localStorage.setItem(key, JSON.stringify(progress));
+  }
+
+  newTarget();
+</script>
+</body>
+</html>

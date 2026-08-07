@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4. Fluidos</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #24334a; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #22d3ee; --accent2: #0891b2;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--text); }
+  .pill { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  .lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 20px; }
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; margin-bottom: 18px;
+  }
+  section h2 { margin: 0 0 6px; font-size: 16px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .formula {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; text-align: center; margin: 10px 0 16px;
+    font-family: "SF Mono", Menlo, monospace; color: var(--accent);
+  }
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .control label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  canvas { width: 100%; height: auto; background: var(--panel2); border-radius: 10px; border: 1px solid var(--border); display: block; }
+  .result-box { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .result { flex: 1; min-width: 140px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .result .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .result .v { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .callout { background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; margin-top: 10px; line-height: 1.5; }
+  .challenge-target { font-size: 15px; margin-bottom: 10px; }
+  .challenge-target b { color: var(--accent); }
+  button {
+    background: var(--accent); color: #032027; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: var(--accent2); color: #fff; }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  #feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #feedback.show { display: block; }
+  #feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--ok); color: #86efac; }
+  #feedback.no { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+  .nav-end { display: flex; justify-content: space-between; margin-top: 24px; }
+  .nav-end a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .table-wrap { overflow-x: auto; margin-bottom: 6px; }
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .ref-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .ref-table td.num { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .gauge-wrap { position: relative; margin-top: 6px; }
+  .gauge-track { height: 14px; border-radius: 8px; background: linear-gradient(90deg, #64748b 0%, #64748b 20%, #22d3ee 20%, #22d3ee 45%, #22d3ee 55%, #22d3ee 80%, #64748b 80%, #64748b 100%); position: relative; }
+  .gauge-marker { position: absolute; top: -6px; width: 3px; height: 26px; background: #fff; border-radius: 2px; transform: translateX(-1.5px); transition: left 0.15s ease; }
+  .gauge-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="index.html">← Volver al mapa</a>
+    <span class="pill">Módulo 4 de 8</span>
+  </div>
+
+  <h1>💨 Mecánica de fluidos</h1>
+  <p class="lead">
+    El viento y el agua son <b>fluidos</b>: se mueven, tienen velocidad, y transportan energía cinética. Este módulo es la base física directa de la energía
+    <b>eólica</b> (viento) y <b>hidráulica</b> (agua) que verás en el módulo 7. La idea clave: la potencia disponible en un fluido depende fuertemente de su velocidad.
+  </p>
+
+  <section>
+    <h2>🌬️ Simulador: potencia del viento</h2>
+    <div class="sub">La potencia eólica crece con el <b>cubo</b> de la velocidad del viento — duplicar el viento significa 8 veces más potencia.</div>
+    <div class="formula">P = ½ × ρ × A × v³</div>
+
+    <div class="control">
+      <label>Velocidad del viento <b id="vwVal">8.0 m/s</b></label>
+      <input type="range" id="vwSlider" min="1" max="20" step="0.5" value="8">
+    </div>
+    <div class="control">
+      <label>Área barrida por las aspas <b id="areaVal">500 m²</b></label>
+      <input type="range" id="areaSlider" min="50" max="2000" step="50" value="500">
+    </div>
+
+    <canvas id="chartWind" width="640" height="240"></canvas>
+
+    <div class="result-box">
+      <div class="result"><div class="k">Potencia disponible</div><div class="v" id="windPower">98.3 kW</div></div>
+    </div>
+    <div class="callout">💡 ρ (densidad del aire) ≈ 1.225 kg/m³ al nivel del mar. Nota que esto es la potencia <i>disponible en el viento</i> — el aerogenerador real solo captura una fracción (recuerda el Módulo 2: eficiencia y pérdidas, límite físico ~59%).</div>
+  </section>
+
+  <section>
+    <h2>💧 Simulador: potencia hidráulica</h2>
+    <div class="sub">En una central hidroeléctrica, la potencia depende del <b>caudal</b> (cuánta agua fluye) y la <b>altura de caída</b> (cuánta presión/energía potencial tiene).</div>
+    <div class="formula">P = ρ × g × Q × h × η</div>
+
+    <div class="control">
+      <label>Caudal <b id="qVal">10.0 m³/s</b></label>
+      <input type="range" id="qSlider" min="0.5" max="50" step="0.5" value="10">
+    </div>
+    <div class="control">
+      <label>Altura de caída (salto) <b id="hVal">30 m</b></label>
+      <input type="range" id="hSlider" min="2" max="200" step="2" value="30">
+    </div>
+
+    <canvas id="chartHydro" width="640" height="150"></canvas>
+    <div class="result-box">
+      <div class="result"><div class="k">Potencia hidráulica (η=90%)</div><div class="v" id="hydroPower">2647 kW</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🌀 Tip Speed Ratio: por qué las aspas giran "lento"</h2>
+    <div class="sub">
+      La <b>razón de velocidad periférica (TSR o λ)</b> compara qué tan rápido se mueve la punta del aspa contra la velocidad del viento. Si gira muy lento, deja pasar viento sin aprovechar;
+      si gira muy rápido, genera turbulencia y "empuja" el aire en vez de capturarlo. Cada diseño de rotor tiene un TSR óptimo.
+    </div>
+    <div class="formula">λ (TSR) = ω × R / v &nbsp;&nbsp;(ω en rad/s, R = radio del rotor)</div>
+
+    <div class="control">
+      <label>Radio del rotor <b id="rotorRVal">40 m</b></label>
+      <input type="range" id="rotorR" min="1" max="80" step="1" value="40">
+    </div>
+    <div class="control">
+      <label>Velocidad de rotación <b id="rpmVal">15 rpm</b></label>
+      <input type="range" id="rpmSlider" min="1" max="300" step="1" value="15">
+    </div>
+    <div class="control">
+      <label>Velocidad del viento <b id="vwTsrVal">9 m/s</b></label>
+      <input type="range" id="vwTsr" min="2" max="20" step="0.5" value="9">
+    </div>
+
+    <div class="gauge-wrap">
+      <div class="gauge-track"><div class="gauge-marker" id="tsrMarker" style="left:50%;"></div></div>
+      <div class="gauge-labels"><span>0</span><span>3</span><span>Óptimo 6–8 (3 aspas)</span><span>11</span><span>14+</span></div>
+    </div>
+    <div class="result-box">
+      <div class="result"><div class="k">TSR (λ)</div><div class="v" id="tsrResult">6.98</div></div>
+      <div class="result"><div class="k">Velocidad en la punta del aspa</div><div class="v" id="tipSpeedResult">62.8 m/s</div></div>
+    </div>
+    <div class="callout">💡 Aerogeneradores de 3 aspas (los típicos) buscan λ ≈ 6-8. Los molinos multipala antiguos (para bombear agua) usan pocas aspas anchas con λ bajo (~1-2) porque priorizan torque, no velocidad — por eso su diseño se ve tan distinto.</div>
+  </section>
+
+  <section>
+    <h2>🔧 Datos de ingeniería: turbinas, tuberías y régimen de flujo</h2>
+    <div class="sub">Referencia rápida para cuando diseñes o evalúes un sistema real con fluidos en movimiento.</div>
+
+    <h3 style="font-size:13.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:0 0 8px;">Selección de turbina hidráulica según salto y caudal</h3>
+    <div class="table-wrap">
+      <table class="ref-table">
+        <tr><th>Turbina</th><th>Altura de caída</th><th>Uso típico</th></tr>
+        <tr><td>Pelton</td><td class="num">&gt; 300 m</td><td>Caudal bajo, montaña, chorro a presión</td></tr>
+        <tr><td>Francis</td><td class="num">30 – 300 m</td><td>La más común, caudal y altura medios</td></tr>
+        <tr><td>Kaplan</td><td class="num">&lt; 30 m</td><td>Caudal alto, ríos de llanura, poca caída</td></tr>
+      </table>
+    </div>
+
+    <h3 style="font-size:13.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:16px 0 8px;">Número de Reynolds — ¿flujo suave o turbulento?</h3>
+    <div class="formula" style="font-size:13px;">Re = ρ × v × D / μ</div>
+    <div class="table-wrap">
+      <table class="ref-table">
+        <tr><th>Régimen</th><th>Reynolds (Re)</th><th>Qué significa</th></tr>
+        <tr><td>Laminar</td><td class="num">&lt; 2,300</td><td>Flujo ordenado en capas — poca pérdida de energía</td></tr>
+        <tr><td>Transición</td><td class="num">2,300 – 4,000</td><td>Zona inestable</td></tr>
+        <tr><td>Turbulento</td><td class="num">&gt; 4,000</td><td>Flujo caótico — más pérdidas por fricción (típico en tuberías reales)</td></tr>
+      </table>
+    </div>
+
+    <h3 style="font-size:13.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin:16px 0 8px;">Pérdida de carga en tuberías (Darcy-Weisbach)</h3>
+    <div class="formula" style="font-size:13px;">h_f = f × (L / D) × (v² / 2g)</div>
+    <div class="sub" style="margin-bottom:0;">
+      Esto es lo que hace que un pozo geotérmico profundo o una tubería forzada hidráulica larga "pierdan" presión antes de llegar a la turbina — a mayor longitud (L) o menor diámetro (D), más pérdida. Es el mismo principio que usas al dimensionar bajantes de agua o ductos de climatización en un edificio.
+    </div>
+  </section>
+
+  <section>
+    <h2>🎯 Reto: predice la potencia eólica</h2>
+    <div class="challenge-target">Con el área fija, ajusta la velocidad del viento arriba para lograr <b id="targetVal">100 kW</b> de potencia disponible.</div>
+    <button id="checkBtn">Comprobar</button>
+    <button class="secondary" id="newTargetBtn">Nuevo objetivo</button>
+    <div id="feedback"></div>
+  </section>
+
+  <div class="nav-end">
+    <a href="modulo3.html">← Anterior</a>
+    <a href="modulo5.html" id="nextLink" style="visibility:hidden;">Siguiente: Transferencia de calor →</a>
+  </div>
+</div>
+
+<script>
+  const vwSlider = document.getElementById('vwSlider');
+  const areaSlider = document.getElementById('areaSlider');
+  const canvasWind = document.getElementById('chartWind');
+  const ctxWind = canvasWind.getContext('2d');
+  const RHO = 1.225;
+
+  function windPowerKW(v, A) { return 0.5 * RHO * A * Math.pow(v, 3) / 1000; }
+
+  function drawWindChart(v, A) {
+    const w = canvasWind.width, h = canvasWind.height;
+    ctxWind.clearRect(0, 0, w, h);
+    const padL = 60, padB = 30, padT = 15, padR = 15;
+    const x0 = padL, x1 = w - padR, y0 = h - padB, y1 = padT;
+    const maxV = 20;
+    const maxP = windPowerKW(maxV, A) * 1.05;
+    const xScale = (vv) => x0 + (vv / maxV) * (x1 - x0);
+    const yScale = (p) => y0 - Math.min(p / maxP, 1) * (y0 - y1);
+
+    ctxWind.strokeStyle = 'rgba(255,255,255,0.06)';
+    for (let i = 0; i <= 5; i++) {
+      const gx = x0 + (i / 5) * (x1 - x0);
+      ctxWind.beginPath(); ctxWind.moveTo(gx, y0); ctxWind.lineTo(gx, y1); ctxWind.stroke();
+    }
+    for (let i = 0; i <= 4; i++) {
+      const gy = y0 - (i / 4) * (y0 - y1);
+      ctxWind.beginPath(); ctxWind.moveTo(x0, gy); ctxWind.lineTo(x1, gy); ctxWind.stroke();
+    }
+    ctxWind.fillStyle = '#94a3b8'; ctxWind.font = '11px sans-serif'; ctxWind.textAlign = 'center';
+    for (let i = 0; i <= 5; i++) ctxWind.fillText(((i / 5) * maxV).toFixed(0) + ' m/s', x0 + (i / 5) * (x1 - x0), y0 + 16);
+    ctxWind.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) ctxWind.fillText(((i / 4) * maxP).toFixed(0), x0 - 8, y0 - (i / 4) * (y0 - y1) + 4);
+
+    ctxWind.strokeStyle = '#22d3ee'; ctxWind.lineWidth = 2.5;
+    ctxWind.beginPath();
+    for (let vv = 0; vv <= maxV; vv += 0.25) {
+      const p = windPowerKW(vv, A);
+      const px = xScale(vv), py = yScale(p);
+      if (vv === 0) ctxWind.moveTo(px, py); else ctxWind.lineTo(px, py);
+    }
+    ctxWind.stroke();
+
+    const p = windPowerKW(v, A);
+    const px = xScale(v), py = yScale(p);
+    ctxWind.fillStyle = '#fff';
+    ctxWind.beginPath(); ctxWind.arc(px, py, 5, 0, Math.PI * 2); ctxWind.fill();
+    ctxWind.strokeStyle = '#22d3ee'; ctxWind.lineWidth = 2;
+    ctxWind.beginPath(); ctxWind.arc(px, py, 5, 0, Math.PI * 2); ctxWind.stroke();
+  }
+
+  function updateWind() {
+    const v = parseFloat(vwSlider.value);
+    const A = parseFloat(areaSlider.value);
+    document.getElementById('vwVal').textContent = v.toFixed(1) + ' m/s';
+    document.getElementById('areaVal').textContent = A + ' m²';
+    const p = windPowerKW(v, A);
+    document.getElementById('windPower').textContent = p.toFixed(1) + ' kW';
+    drawWindChart(v, A);
+    return p;
+  }
+  vwSlider.addEventListener('input', updateWind);
+  areaSlider.addEventListener('input', updateWind);
+  updateWind();
+
+  // Hydro
+  const qSlider = document.getElementById('qSlider');
+  const hSlider = document.getElementById('hSlider');
+  const canvasHydro = document.getElementById('chartHydro');
+  const ctxHydro = canvasHydro.getContext('2d');
+  const G = 9.81, RHO_W = 1000, ETA = 0.9;
+
+  function hydroPowerKW(Q, hgt) { return (RHO_W * G * Q * hgt * ETA) / 1000; }
+
+  function updateHydro() {
+    const Q = parseFloat(qSlider.value);
+    const hgt = parseFloat(hSlider.value);
+    document.getElementById('qVal').textContent = Q.toFixed(1) + ' m³/s';
+    document.getElementById('hVal').textContent = hgt + ' m';
+    const p = hydroPowerKW(Q, hgt);
+    document.getElementById('hydroPower').textContent = Math.round(p).toLocaleString() + ' kW';
+
+    const w = canvasHydro.width, h = canvasHydro.height;
+    ctxHydro.clearRect(0, 0, w, h);
+    const padL = 20, padR = 20, padT = 15, barH = 40;
+    const maxW = w - padL - padR;
+    const maxP = hydroPowerKW(50, 200);
+    const pct = Math.min(p / maxP, 1);
+
+    ctxHydro.fillStyle = '#334155';
+    ctxHydro.fillRect(padL, padT, maxW, barH);
+    ctxHydro.fillStyle = '#22d3ee';
+    ctxHydro.fillRect(padL, padT, maxW * pct, barH);
+    ctxHydro.fillStyle = '#052027';
+    ctxHydro.font = 'bold 13px sans-serif';
+    ctxHydro.textAlign = 'left';
+    ctxHydro.fillText(Math.round(p).toLocaleString() + ' kW', padL + 8, padT + barH / 2 + 5);
+  }
+  qSlider.addEventListener('input', updateHydro);
+  hSlider.addEventListener('input', updateHydro);
+  updateHydro();
+
+  // Tip Speed Ratio
+  const rotorR = document.getElementById('rotorR');
+  const rpmSlider = document.getElementById('rpmSlider');
+  const vwTsr = document.getElementById('vwTsr');
+  const tsrMarker = document.getElementById('tsrMarker');
+
+  function updateTsr() {
+    const R = parseFloat(rotorR.value);
+    const rpm = parseFloat(rpmSlider.value);
+    const v = parseFloat(vwTsr.value);
+    document.getElementById('rotorRVal').textContent = R + ' m';
+    document.getElementById('rpmVal').textContent = rpm + ' rpm';
+    document.getElementById('vwTsrVal').textContent = v.toFixed(1) + ' m/s';
+
+    const omega = rpm * 2 * Math.PI / 60;
+    const tipSpeed = omega * R;
+    const tsr = tipSpeed / v;
+
+    document.getElementById('tsrResult').textContent = tsr.toFixed(2);
+    document.getElementById('tipSpeedResult').textContent = tipSpeed.toFixed(1) + ' m/s';
+
+    const maxTsr = 14;
+    const pct = Math.min(100, Math.max(0, (tsr / maxTsr) * 100));
+    tsrMarker.style.left = pct + '%';
+  }
+  [rotorR, rpmSlider, vwTsr].forEach(el => el.addEventListener('input', updateTsr));
+  updateTsr();
+
+  // Challenge
+  let target = 100;
+  function newTarget() {
+    const A = parseFloat(areaSlider.value);
+    const vRand = 4 + Math.random() * 14;
+    target = Math.round(windPowerKW(vRand, A));
+    document.getElementById('targetVal').textContent = target + ' kW';
+    document.getElementById('feedback').className = '';
+  }
+  document.getElementById('newTargetBtn').addEventListener('click', newTarget);
+
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    const p = updateWind();
+    const errPct = Math.abs(p - target) / target * 100;
+    const fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    if (errPct <= 5) {
+      const score = Math.max(60, Math.round(100 - errPct * 4));
+      fb.className = 'feedback show ok';
+      fb.textContent = `¡Correcto! Lograste ${p.toFixed(1)} kW (objetivo: ${target} kW). Puntaje: ${score}/100.`;
+      saveProgress(score);
+      document.getElementById('nextLink').style.visibility = 'visible';
+    } else {
+      fb.className = 'feedback show no';
+      fb.textContent = `Lograste ${p.toFixed(1)} kW, el objetivo era ${target} kW (error de ${errPct.toFixed(0)}%). Ajusta la velocidad del viento e inténtalo de nuevo.`;
+    }
+  });
+
+  function saveProgress(score) {
+    const key = 'energia_progress';
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    const prevScore = (progress.modulo4 && progress.modulo4.score) || 0;
+    progress.modulo4 = { completed: true, score: Math.max(prevScore, score) };
+    localStorage.setItem(key, JSON.stringify(progress));
+  }
+
+  newTarget();
+</script>
+</body>
+</html>

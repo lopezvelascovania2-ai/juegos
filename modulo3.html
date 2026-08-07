@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3. Electricidad básica</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #24334a; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #3b82f6; --accent2: #2563eb;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--text); }
+  .pill { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  .lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 20px; }
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; margin-bottom: 18px;
+  }
+  section h2 { margin: 0 0 6px; font-size: 16px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .formula {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; text-align: center; margin: 10px 0 16px;
+    font-family: "SF Mono", Menlo, monospace; color: var(--accent);
+  }
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .control label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  canvas { width: 100%; height: auto; background: var(--panel2); border-radius: 10px; border: 1px solid var(--border); display: block; }
+  .result-box { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .result { flex: 1; min-width: 120px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .result .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .result .v { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .two-col { grid-template-columns: 1fr; } }
+  .mini-panel { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+  .mini-panel h4 { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+  .challenge-target { font-size: 15px; margin-bottom: 10px; }
+  .challenge-target b { color: var(--accent); }
+  button {
+    background: var(--accent); color: #051224; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: var(--accent2); color: #fff; }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  #feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #feedback.show { display: block; }
+  #feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--ok); color: #86efac; }
+  #feedback.no { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+  .nav-end { display: flex; justify-content: space-between; margin-top: 24px; }
+  .nav-end a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .table-wrap { overflow-x: auto; margin-bottom: 6px; }
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .ref-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .ref-table td.num { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .callout { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; margin: 12px 0; line-height: 1.5; }
+  .cards3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 620px) { .cards3 { grid-template-columns: 1fr; } }
+  .inv-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 12.5px; line-height: 1.5; }
+  .inv-card h4 { margin: 0 0 6px; font-size: 13.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="index.html">← Volver al mapa</a>
+    <span class="pill">Módulo 3 de 8</span>
+  </div>
+
+  <h1>🔌 Electricidad básica</h1>
+  <p class="lead">
+    Toda tecnología renovable termina generando electricidad, así que necesitas estos tres conceptos: <b>voltaje (V)</b> — la "presión" que empuja los electrones,
+    <b>corriente (I)</b> — cuántos electrones fluyen por segundo, y <b>resistencia (R)</b> — qué tanto se opone el material al flujo. Se relacionan con la Ley de Ohm.
+  </p>
+
+  <section>
+    <h2>⚡ Simulador: Ley de Ohm</h2>
+    <div class="sub">Mueve voltaje y resistencia. Observa cómo cambia la corriente y dónde cae tu punto sobre la curva V–I.</div>
+    <div class="formula">V = I × R &nbsp;&nbsp;|&nbsp;&nbsp; P = V × I</div>
+
+    <div class="control">
+      <label>Voltaje <b id="vVal">12.0 V</b></label>
+      <input type="range" id="vSlider" min="1" max="48" step="0.5" value="12">
+    </div>
+    <div class="control">
+      <label>Resistencia <b id="rVal">6.0 Ω</b></label>
+      <input type="range" id="rSlider" min="1" max="20" step="0.5" value="6">
+    </div>
+
+    <canvas id="chart3" width="640" height="240"></canvas>
+
+    <div class="result-box">
+      <div class="result"><div class="k">Corriente (I = V/R)</div><div class="v" id="iResult">2.0 A</div></div>
+      <div class="result"><div class="k">Potencia (P = V×I)</div><div class="v" id="pResult">24.0 W</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>〰️ Corriente continua (DC) vs alterna (AC)</h2>
+    <div class="sub">Paneles solares, celdas de hidrógeno y baterías generan <b>DC</b> (voltaje constante). La red eléctrica usa <b>AC</b> (invierte dirección 50-60 veces/seg).
+    Por eso los inversores son esenciales: convierten la DC del panel en AC utilizable.</div>
+    <div class="two-col">
+      <div class="mini-panel">
+        <h4>☀️ DC — Panel solar / batería</h4>
+        <canvas id="dcChart" width="280" height="100"></canvas>
+      </div>
+      <div class="mini-panel">
+        <h4>🏠 AC — Red eléctrica</h4>
+        <canvas id="acChart" width="280" height="100"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🔺 Potencia trifásica y factor de potencia</h2>
+    <div class="sub">
+      Casi toda instalación renovable de más de unos kW (un parque solar, un edificio grande, una industria) se conecta en <b>trifásico</b>, no monofásico:
+      transporta más potencia con conductores más delgados y motores/transformadores funcionan más suaves.
+    </div>
+    <div class="formula">P (kW) = √3 × V_línea × I_línea × cos φ / 1000</div>
+    <div class="sub" style="margin-bottom:14px;">
+      No toda la potencia que "pide" una carga a la red es utilizable: la <b>potencia activa (P, kW)</b> es la que realmente hace trabajo; la <b>potencia aparente (S, kVA)</b> es la que debe entregar la red o el inversor.
+      El <b>factor de potencia (cos φ)</b> mide qué tan bien se aprovecha esa capacidad — motores, transformadores y algunos inversores baratos generan <b>potencia reactiva (Q, kVAr)</b> que no hace trabajo útil pero sí ocupa cables y equipos.
+    </div>
+
+    <div class="control">
+      <label>Potencia aparente contratada (S) <b id="sVal">100 kVA</b></label>
+      <input type="range" id="sSlider" min="10" max="500" step="5" value="100">
+    </div>
+    <div class="control">
+      <label>Factor de potencia (cos φ) <b id="fpVal">0.95</b></label>
+      <input type="range" id="fpSlider" min="0.6" max="1.0" step="0.01" value="0.95">
+    </div>
+
+    <canvas id="chartTriangle" width="640" height="220"></canvas>
+
+    <div class="result-box">
+      <div class="result"><div class="k">Potencia activa útil (P)</div><div class="v" id="pActiveResult">95.0 kW</div></div>
+      <div class="result"><div class="k">Potencia reactiva "desperdiciada" (Q)</div><div class="v" id="qResult">31.2 kVAr</div></div>
+    </div>
+    <div class="callout">💡 Un cos φ bajo (ej. 0.7) obliga a sobredimensionar cables e inversores para la misma potencia útil — por eso las empresas eléctricas penalizan a clientes industriales con mal factor de potencia. Los inversores fotovoltaicos modernos pueden operar con cos φ ≈ 1, incluso cerca de 0.9 inductivo/capacitivo para ayudar a estabilizar la red.</div>
+  </section>
+
+  <section>
+    <h2>🔄 De DC a la red: tipos de inversor</h2>
+    <div class="sub">El inversor convierte la corriente DC del panel/batería en AC utilizable — y cuál usar es una decisión real de diseño en un proyecto solar.</div>
+    <div class="cards3">
+      <div class="inv-card"><h4>🔌 Inversor central</h4>Uno solo para toda la planta. Eficiente y barato por W, pero si falla, se detiene toda la instalación. Típico en plantas solares de gran escala.</div>
+      <div class="inv-card"><h4>🧵 Inversor string</h4>Uno por cada "cadena" (string) de paneles en serie. El más usado en techos residenciales/comerciales — buen balance costo/confiabilidad.</div>
+      <div class="inv-card"><h4>🔬 Microinversor</h4>Uno por cada panel individual. Máximo rendimiento si hay sombras parciales (típico en techos urbanos irregulares), pero más caro por W instalado.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🎯 Reto: alcanza la potencia objetivo</h2>
+    <div class="challenge-target">Ajusta voltaje y resistencia arriba para lograr una potencia de <b id="targetVal">50 W</b>.</div>
+    <button id="checkBtn">Comprobar</button>
+    <button class="secondary" id="newTargetBtn">Nuevo objetivo</button>
+    <div id="feedback"></div>
+  </section>
+
+  <div class="nav-end">
+    <a href="modulo2.html">← Anterior</a>
+    <a href="modulo4.html" id="nextLink" style="visibility:hidden;">Siguiente: Fluidos →</a>
+  </div>
+</div>
+
+<script>
+  const vSlider = document.getElementById('vSlider');
+  const rSlider = document.getElementById('rSlider');
+  const canvas = document.getElementById('chart3');
+  const ctx = canvas.getContext('2d');
+
+  function drawOhmChart(V, R) {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const padL = 55, padB = 30, padT = 15, padR = 15;
+    const x0 = padL, x1 = w - padR, y0 = h - padB, y1 = padT;
+    const maxV = 48, maxI = 48; // I axis scaled generously
+    const xScale = (v) => x0 + (v / maxV) * (x1 - x0);
+    const yScale = (i) => y0 - Math.min(i / maxI, 1) * (y0 - y1);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    for (let i = 0; i <= 6; i++) {
+      const gx = x0 + (i / 6) * (x1 - x0);
+      ctx.beginPath(); ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); ctx.stroke();
+    }
+    for (let i = 0; i <= 4; i++) {
+      const gy = y0 - (i / 4) * (y0 - y1);
+      ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.stroke();
+    }
+    ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    for (let i = 0; i <= 6; i++) ctx.fillText(((i / 6) * maxV).toFixed(0) + 'V', x0 + (i / 6) * (x1 - x0), y0 + 16);
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) ctx.fillText(((i / 4) * maxI).toFixed(0) + 'A', x0 - 8, y0 - (i / 4) * (y0 - y1) + 4);
+
+    // curve I(v) = v/R across the voltage range
+    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    let first = true;
+    for (let v = 0; v <= maxV; v += 1) {
+      const i = v / R;
+      const px = xScale(v), py = yScale(i);
+      if (first) { ctx.moveTo(px, py); first = false; } else { ctx.lineTo(px, py); }
+    }
+    ctx.stroke();
+
+    // current point
+    const I = V / R;
+    const px = xScale(V), py = yScale(I);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.stroke();
+
+    // dashed guides
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, y0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x0, py); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function update() {
+    const V = parseFloat(vSlider.value);
+    const R = parseFloat(rSlider.value);
+    document.getElementById('vVal').textContent = V.toFixed(1) + ' V';
+    document.getElementById('rVal').textContent = R.toFixed(1) + ' Ω';
+    const I = V / R;
+    const P = V * I;
+    document.getElementById('iResult').textContent = I.toFixed(2) + ' A';
+    document.getElementById('pResult').textContent = P.toFixed(1) + ' W';
+    drawOhmChart(V, R);
+    return P;
+  }
+  vSlider.addEventListener('input', update);
+  rSlider.addEventListener('input', update);
+  update();
+
+  // DC / AC mini charts
+  function drawWave(id, type) {
+    const c = document.getElementById(id);
+    const cx = c.getContext('2d');
+    const w = c.width, h = c.height, mid = h / 2;
+    cx.clearRect(0, 0, w, h);
+    cx.strokeStyle = 'rgba(255,255,255,0.1)';
+    cx.beginPath(); cx.moveTo(0, mid); cx.lineTo(w, mid); cx.stroke();
+    cx.strokeStyle = type === 'dc' ? '#f59e0b' : '#3b82f6';
+    cx.lineWidth = 2.5;
+    cx.beginPath();
+    if (type === 'dc') {
+      cx.moveTo(10, mid - 25);
+      cx.lineTo(w - 10, mid - 25);
+    } else {
+      for (let x = 0; x <= w; x++) {
+        const y = mid - Math.sin((x / w) * Math.PI * 4) * 28;
+        if (x === 0) cx.moveTo(x, y); else cx.lineTo(x, y);
+      }
+    }
+    cx.stroke();
+  }
+  drawWave('dcChart', 'dc');
+  drawWave('acChart', 'ac');
+
+  // Power triangle (P, Q, S)
+  const sSlider = document.getElementById('sSlider');
+  const fpSlider2 = document.getElementById('fpSlider');
+  const canvasTri = document.getElementById('chartTriangle');
+  const ctxTri = canvasTri.getContext('2d');
+
+  function drawTriangle(S, cosphi) {
+    const w = canvasTri.width, h = canvasTri.height;
+    ctxTri.clearRect(0, 0, w, h);
+    const phi = Math.acos(cosphi);
+    const P = S * cosphi;
+    const Q = S * Math.sin(phi);
+
+    const originX = 90, originY = h - 40;
+    const scale = Math.min((w - 160) / Math.max(P, 1), (h - 70) / Math.max(Q, 1));
+    const px = originX + P * scale;
+    const py = originY - Q * scale;
+
+    // axes
+    ctxTri.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctxTri.lineWidth = 1;
+    ctxTri.beginPath(); ctxTri.moveTo(originX, originY); ctxTri.lineTo(w - 40, originY); ctxTri.stroke();
+    ctxTri.beginPath(); ctxTri.moveTo(originX, originY); ctxTri.lineTo(originX, 30); ctxTri.stroke();
+
+    // P (horizontal, active)
+    ctxTri.strokeStyle = '#22c55e'; ctxTri.lineWidth = 3;
+    ctxTri.beginPath(); ctxTri.moveTo(originX, originY); ctxTri.lineTo(px, originY); ctxTri.stroke();
+    // Q (vertical, reactive)
+    ctxTri.strokeStyle = '#f59e0b'; ctxTri.lineWidth = 3;
+    ctxTri.beginPath(); ctxTri.moveTo(px, originY); ctxTri.lineTo(px, py); ctxTri.stroke();
+    // S (hypotenuse, apparent)
+    ctxTri.strokeStyle = '#3b82f6'; ctxTri.lineWidth = 3;
+    ctxTri.beginPath(); ctxTri.moveTo(originX, originY); ctxTri.lineTo(px, py); ctxTri.stroke();
+
+    ctxTri.font = 'bold 13px sans-serif'; ctxTri.textAlign = 'center';
+    ctxTri.fillStyle = '#22c55e';
+    ctxTri.fillText('P = ' + P.toFixed(1) + ' kW', (originX + px) / 2, originY + 20);
+    ctxTri.fillStyle = '#f59e0b';
+    ctxTri.save();
+    ctxTri.translate(px + 16, (originY + py) / 2);
+    ctxTri.rotate(-Math.PI / 2);
+    ctxTri.fillText('Q = ' + Q.toFixed(1) + ' kVAr', 0, 0);
+    ctxTri.restore();
+    ctxTri.fillStyle = '#3b82f6';
+    ctxTri.save();
+    const midx = (originX + px) / 2, midy = (originY + py) / 2;
+    ctxTri.translate(midx - 24, midy - 10);
+    ctxTri.fillText('S = ' + S.toFixed(0) + ' kVA', 0, 0);
+    ctxTri.restore();
+  }
+
+  function updateTriangle() {
+    const S = parseFloat(sSlider.value);
+    const cosphi = parseFloat(fpSlider2.value);
+    document.getElementById('sVal').textContent = S + ' kVA';
+    document.getElementById('fpVal').textContent = cosphi.toFixed(2);
+    const P = S * cosphi;
+    const Q = S * Math.sin(Math.acos(cosphi));
+    document.getElementById('pActiveResult').textContent = P.toFixed(1) + ' kW';
+    document.getElementById('qResult').textContent = Q.toFixed(1) + ' kVAr';
+    drawTriangle(S, cosphi);
+  }
+  sSlider.addEventListener('input', updateTriangle);
+  fpSlider2.addEventListener('input', updateTriangle);
+  updateTriangle();
+
+  // Challenge
+  let target = 50;
+  function newTarget() {
+    target = Math.round(10 + Math.random() * 150);
+    document.getElementById('targetVal').textContent = target + ' W';
+    document.getElementById('feedback').className = '';
+  }
+  document.getElementById('newTargetBtn').addEventListener('click', newTarget);
+
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    const P = update();
+    const errPct = Math.abs(P - target) / target * 100;
+    const fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    if (errPct <= 5) {
+      const score = Math.max(60, Math.round(100 - errPct * 4));
+      fb.className = 'feedback show ok';
+      fb.textContent = `¡Correcto! Lograste ${P.toFixed(1)} W (objetivo: ${target} W). Puntaje: ${score}/100.`;
+      saveProgress(score);
+      document.getElementById('nextLink').style.visibility = 'visible';
+    } else {
+      fb.className = 'feedback show no';
+      fb.textContent = `Lograste ${P.toFixed(1)} W, el objetivo era ${target} W (error de ${errPct.toFixed(0)}%). Ajusta V o R e inténtalo de nuevo.`;
+    }
+  });
+
+  function saveProgress(score) {
+    const key = 'energia_progress';
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    const prevScore = (progress.modulo3 && progress.modulo3.score) || 0;
+    progress.modulo3 = { completed: true, score: Math.max(prevScore, score) };
+    localStorage.setItem(key, JSON.stringify(progress));
+  }
+
+  newTarget();
+</script>
+</body>
+</html>

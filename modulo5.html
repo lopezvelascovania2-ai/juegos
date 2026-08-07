@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5. Transferencia de calor</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #24334a; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #ef4444; --accent2: #dc2626;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--text); }
+  .pill { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  .lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 20px; }
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; margin-bottom: 18px;
+  }
+  section h2 { margin: 0 0 6px; font-size: 16px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 6px; }
+  @media (max-width: 560px) { .modes { grid-template-columns: 1fr; } }
+  .mode-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .mode-card .ic { font-size: 22px; }
+  .mode-card h4 { margin: 6px 0 4px; font-size: 13.5px; }
+  .mode-card p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .formula {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 14px; text-align: center; margin: 10px 0 16px;
+    font-family: "SF Mono", Menlo, monospace; color: var(--accent);
+  }
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .control label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  canvas { width: 100%; height: auto; background: var(--panel2); border-radius: 10px; border: 1px solid var(--border); display: block; }
+  .result-box { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .result { flex: 1; min-width: 140px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .result .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .result .v { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .challenge-target { font-size: 15px; margin-bottom: 10px; }
+  .challenge-target b { color: var(--accent); }
+  button {
+    background: var(--accent); color: #2a0a0a; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: var(--accent2); color: #fff; }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  #feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #feedback.show { display: block; }
+  #feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--ok); color: #86efac; }
+  #feedback.no { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+  .nav-end { display: flex; justify-content: space-between; margin-top: 24px; }
+  .nav-end a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .table-wrap { overflow-x: auto; margin-bottom: 6px; }
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .ref-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .ref-table td.num { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .callout { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; margin: 12px 0; line-height: 1.5; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 560px) { .two-col { grid-template-columns: 1fr; } }
+  .rate-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="index.html">← Volver al mapa</a>
+    <span class="pill">Módulo 5 de 8</span>
+  </div>
+
+  <h1>🔥 Transferencia de calor</h1>
+  <p class="lead">
+    El calor se mueve de tres formas distintas. Entenderlas te explica cómo funciona un colector solar térmico, por qué un pozo geotérmico "gana" calor,
+    o por qué una planta de biomasa pierde eficiencia si no está bien aislada.
+  </p>
+
+  <div class="modes">
+    <div class="mode-card"><div class="ic">🔗</div><h4>Conducción</h4><p>Calor a través de un material sólido en contacto directo (ej: tubería metálica de un colector).</p></div>
+    <div class="mode-card"><div class="ic">🌀</div><h4>Convección</h4><p>Calor transportado por un fluido en movimiento (aire o agua) — el viento enfriando un panel.</p></div>
+    <div class="mode-card"><div class="ic">☀️</div><h4>Radiación</h4><p>Calor que viaja como ondas electromagnéticas, sin necesitar medio — así llega la energía del sol.</p></div>
+  </div>
+
+  <section>
+    <h2>🧪 Simulador: eficiencia de un colector solar térmico</h2>
+    <div class="sub">Un colector <b>gana</b> calor por radiación solar, pero <b>pierde</b> calor por conducción+convección hacia el ambiente. Cuanto más caliente esté respecto al ambiente, más pierde.</div>
+    <div class="formula">η = η₀ − U × (T_colector − T_ambiente) / G</div>
+
+    <div class="control">
+      <label>Irradiancia solar (G) <b id="gVal">800 W/m²</b></label>
+      <input type="range" id="gSlider" min="200" max="1200" step="20" value="800">
+    </div>
+    <div class="control">
+      <label>Diferencia de temperatura (colector − ambiente) <b id="dtVal">40 °C</b></label>
+      <input type="range" id="dtSlider" min="0" max="120" step="1" value="40">
+    </div>
+    <div class="control">
+      <label>Calidad del aislamiento (U, menor = mejor) <b id="uVal">4.0 W/m²K</b></label>
+      <input type="range" id="uSlider" min="1" max="10" step="0.2" value="4">
+    </div>
+
+    <canvas id="chart5" width="640" height="240"></canvas>
+
+    <div class="result-box">
+      <div class="result"><div class="k">Eficiencia del colector</div><div class="v" id="effResult">80.0%</div></div>
+      <div class="result"><div class="k">Calor útil</div><div class="v" id="qResult">640 W/m²</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🏛️ Puente con arquitectura: valor U y valor R</h2>
+    <div class="sub">
+      El coeficiente <b>U</b> que usaste arriba para el colector (W/m²K) es <i>exactamente</i> el mismo valor U que usas al calificar la envolvente de un edificio — un muro, una ventana, una cubierta.
+      Cuanto menor el valor U, mejor aísla. Su inverso es la <b>resistencia térmica R</b> (m²K/W), y las resistencias de capas en serie (aislante + estructura + películas de aire) se <b>suman</b>, no se multiplican.
+    </div>
+    <div class="formula">U = 1 / R_total &nbsp;&nbsp;|&nbsp;&nbsp; R_total = R_ext + R_capa1 + R_capa2 + ... + R_int</div>
+
+    <div class="control">
+      <label>Resistencia del aislante <b id="rInsVal">2.0 m²K/W</b></label>
+      <input type="range" id="rIns" min="0" max="6" step="0.1" value="2">
+    </div>
+    <div class="control">
+      <label>Resistencia de la estructura (muro/hormigón) <b id="rStructVal">0.15 m²K/W</b></label>
+      <input type="range" id="rStruct" min="0.02" max="0.6" step="0.01" value="0.15">
+    </div>
+
+    <div class="result-box">
+      <div class="result"><div class="k">Resistencia total (R)</div><div class="v" id="rTotalResult">2.32 m²K/W</div></div>
+      <div class="result"><div class="k">Transmitancia (U)</div><div class="v" id="uCalcResult">0.43 W/m²K</div></div>
+      <div class="result"><div class="k">Calificación</div><div class="v"><span class="rate-badge" id="rateBadge">Buena</span></div></div>
+    </div>
+
+    <div class="table-wrap" style="margin-top:14px;">
+      <table class="ref-table">
+        <tr><th>Elemento</th><th>U típico sin aislar</th><th>U típico bien aislado</th></tr>
+        <tr><td>Muro</td><td class="num">2.0 – 3.0 W/m²K</td><td class="num">0.2 – 0.5 W/m²K</td></tr>
+        <tr><td>Ventana</td><td class="num">5.0 – 5.8 W/m²K (vidrio simple)</td><td class="num">1.0 – 2.0 W/m²K (doble/triple)</td></tr>
+        <tr><td>Cubierta / techo</td><td class="num">2.0 – 3.5 W/m²K</td><td class="num">0.15 – 0.35 W/m²K</td></tr>
+      </table>
+    </div>
+    <div class="callout">💡 Un colector solar térmico sin aislar tiene un U tan alto (8-10 W/m²K) como una ventana de vidrio simple — pierde calor casi igual de rápido. Por eso los colectores buenos llevan aislamiento en la parte trasera y lateral, igual que exigirías en la envolvente de un edificio eficiente.</div>
+  </section>
+
+  <section>
+    <h2>🧊 Colectores solares térmicos: dos diseños reales</h2>
+    <div class="two-col">
+      <div class="mode-card"><div class="ic">▭</div><h4>Placa plana</h4><p>Superficie absorbente bajo un vidrio, con aislamiento trasero. Más barato y robusto, pero pierde más calor por convección en climas fríos. Típico para agua caliente sanitaria residencial.</p></div>
+      <div class="mode-card"><div class="ic">🧪</div><h4>Tubos de vacío</h4><p>Cada tubo tiene vacío entre capas (como un termo), casi eliminando la pérdida por convección/conducción. Más caro, pero mucho más eficiente en climas fríos o para temperaturas altas de proceso.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🎯 Reto: mantén el colector eficiente</h2>
+    <div class="challenge-target">Con G e irradiancia fijas, ajusta el aislamiento (U) para lograr una eficiencia de <b id="targetVal">70%</b> con ΔT = 40°C.</div>
+    <button id="checkBtn">Comprobar</button>
+    <button class="secondary" id="newTargetBtn">Nuevo objetivo</button>
+    <div id="feedback"></div>
+  </section>
+
+  <div class="nav-end">
+    <a href="modulo4.html">← Anterior</a>
+    <a href="modulo6.html" id="nextLink" style="visibility:hidden;">Siguiente: Termodinámica aplicada →</a>
+  </div>
+</div>
+
+<script>
+  const gSlider = document.getElementById('gSlider');
+  const dtSlider = document.getElementById('dtSlider');
+  const uSlider = document.getElementById('uSlider');
+  const canvas = document.getElementById('chart5');
+  const ctx = canvas.getContext('2d');
+  const ETA0 = 0.8;
+
+  function efficiency(G, dt, U) {
+    return Math.max(0, ETA0 - (U * dt) / G);
+  }
+
+  function drawChart(G, dt, U) {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const padL = 55, padB = 30, padT = 15, padR = 15;
+    const x0 = padL, x1 = w - padR, y0 = h - padB, y1 = padT;
+    const maxDt = 120;
+    const xScale = (v) => x0 + (v / maxDt) * (x1 - x0);
+    const yScale = (e) => y0 - Math.max(0, Math.min(e / ETA0, 1)) * (y0 - y1);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    for (let i = 0; i <= 6; i++) {
+      const gx = x0 + (i / 6) * (x1 - x0);
+      ctx.beginPath(); ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); ctx.stroke();
+    }
+    for (let i = 0; i <= 4; i++) {
+      const gy = y0 - (i / 4) * (y0 - y1);
+      ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.stroke();
+    }
+    ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    for (let i = 0; i <= 6; i++) ctx.fillText(((i / 6) * maxDt).toFixed(0) + '°C', x0 + (i / 6) * (x1 - x0), y0 + 16);
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) ctx.fillText((((i / 4) * ETA0) * 100).toFixed(0) + '%', x0 - 8, y0 - (i / 4) * (y0 - y1) + 4);
+
+    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let d = 0; d <= maxDt; d += 1) {
+      const e = efficiency(G, d, U);
+      const px = xScale(d), py = yScale(e);
+      if (d === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    const e = efficiency(G, dt, U);
+    const px = xScale(dt), py = yScale(e);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  function update() {
+    const G = parseFloat(gSlider.value);
+    const dt = parseFloat(dtSlider.value);
+    const U = parseFloat(uSlider.value);
+    document.getElementById('gVal').textContent = G + ' W/m²';
+    document.getElementById('dtVal').textContent = dt + ' °C';
+    document.getElementById('uVal').textContent = U.toFixed(1) + ' W/m²K';
+    const eff = efficiency(G, dt, U);
+    document.getElementById('effResult').textContent = (eff * 100).toFixed(1) + '%';
+    document.getElementById('qResult').textContent = Math.round(eff * G) + ' W/m²';
+    drawChart(G, dt, U);
+    return eff;
+  }
+  gSlider.addEventListener('input', update);
+  dtSlider.addEventListener('input', update);
+  uSlider.addEventListener('input', update);
+  update();
+
+  // U/R calculator (architecture bridge)
+  const rIns = document.getElementById('rIns');
+  const rStruct = document.getElementById('rStruct');
+  const R_FILMS = 0.17; // interior + exterior air film resistance, typical
+
+  function updateUR() {
+    const ri = parseFloat(rIns.value);
+    const rs = parseFloat(rStruct.value);
+    document.getElementById('rInsVal').textContent = ri.toFixed(1) + ' m²K/W';
+    document.getElementById('rStructVal').textContent = rs.toFixed(2) + ' m²K/W';
+
+    const rTotal = R_FILMS + ri + rs;
+    const U = 1 / rTotal;
+    document.getElementById('rTotalResult').textContent = rTotal.toFixed(2) + ' m²K/W';
+    document.getElementById('uCalcResult').textContent = U.toFixed(2) + ' W/m²K';
+
+    const badge = document.getElementById('rateBadge');
+    if (U > 1.5) { badge.textContent = 'Mala'; badge.style.background = 'rgba(239,68,68,0.2)'; badge.style.color = '#fca5a5'; }
+    else if (U > 0.8) { badge.textContent = 'Regular'; badge.style.background = 'rgba(245,158,11,0.2)'; badge.style.color = '#fcd34d'; }
+    else if (U > 0.4) { badge.textContent = 'Buena'; badge.style.background = 'rgba(34,197,94,0.2)'; badge.style.color = '#86efac'; }
+    else { badge.textContent = 'Excelente'; badge.style.background = 'rgba(34,211,238,0.2)'; badge.style.color = '#67e8f9'; }
+  }
+  rIns.addEventListener('input', updateUR);
+  rStruct.addEventListener('input', updateUR);
+  updateUR();
+
+  // Challenge: fix dt=40, G current, find U for target efficiency
+  let target = 70;
+  function newTarget() {
+    target = Math.round(40 + Math.random() * 35);
+    document.getElementById('targetVal').textContent = target + '%';
+    document.getElementById('feedback').className = '';
+    dtSlider.value = 40;
+    update();
+  }
+  document.getElementById('newTargetBtn').addEventListener('click', newTarget);
+
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    const eff = update() * 100;
+    const errPct = Math.abs(eff - target);
+    const fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    if (errPct <= 3) {
+      const score = Math.max(60, Math.round(100 - errPct * 10));
+      fb.className = 'feedback show ok';
+      fb.textContent = `¡Bien ajustado! Lograste ${eff.toFixed(1)}% (objetivo: ${target}%). Puntaje: ${score}/100.`;
+      saveProgress(score);
+      document.getElementById('nextLink').style.visibility = 'visible';
+    } else {
+      fb.className = 'feedback show no';
+      fb.textContent = `Lograste ${eff.toFixed(1)}%, el objetivo era ${target}% (ΔT debe estar en 40°C). Ajusta el aislamiento (U) e inténtalo de nuevo.`;
+    }
+  });
+
+  function saveProgress(score) {
+    const key = 'energia_progress';
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    const prevScore = (progress.modulo5 && progress.modulo5.score) || 0;
+    progress.modulo5 = { completed: true, score: Math.max(prevScore, score) };
+    localStorage.setItem(key, JSON.stringify(progress));
+  }
+
+  newTarget();
+</script>
+</body>
+</html>

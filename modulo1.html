@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1. Energía y potencia</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #24334a; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #f59e0b; --accent2: #d97706;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--text); }
+  .pill { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  .lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 20px; }
+
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; margin-bottom: 18px;
+  }
+  section h2 { margin: 0 0 6px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+
+  .formula {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 16px; text-align: center; margin: 10px 0 16px;
+    font-family: "SF Mono", Menlo, monospace; color: var(--accent);
+  }
+
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .control label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+
+  canvas { width: 100%; height: auto; background: var(--panel2); border-radius: 10px; border: 1px solid var(--border); display: block; }
+
+  .result-box {
+    display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap;
+  }
+  .result {
+    flex: 1; min-width: 140px; background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px;
+  }
+  .result .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .result .v { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+
+  .compare-row { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .compare-item {
+    display: flex; align-items: center; gap: 10px; background: var(--panel2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13.5px;
+  }
+  .compare-item .ic { font-size: 18px; }
+  .compare-item .bar-wrap { flex: 1; background: var(--bg); border-radius: 6px; height: 10px; overflow: hidden; }
+  .compare-item .bar { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+  .compare-item .val { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+  .callout { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; margin: 12px 0; line-height: 1.5; }
+  h3 { color: var(--text); }
+  .conv-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .conv-row input[type=number] {
+    width: 120px; background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 7px 10px; font-size: 14px;
+  }
+  .conv-row select {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 7px 10px; font-size: 14px;
+  }
+  .table-wrap { overflow-x: auto; }
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .ref-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .ref-table td.num { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ref-table tr.highlight td { background: rgba(245,158,11,0.08); }
+
+  .challenge-target { font-size: 15px; margin-bottom: 10px; }
+  .challenge-target b { color: var(--accent); }
+  button {
+    background: var(--accent); color: #1c1300; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: var(--accent2); color: #fff; }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  #feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #feedback.show { display: block; }
+  #feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--ok); color: #86efac; }
+  #feedback.no { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+
+  .nav-end { display: flex; justify-content: space-between; margin-top: 24px; }
+  .nav-end a { color: var(--muted); text-decoration: none; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="index.html">← Volver al mapa</a>
+    <span class="pill">Módulo 1 de 8</span>
+  </div>
+
+  <h1>🔋 Energía y potencia</h1>
+  <p class="lead">
+    Son las dos ideas más confundidas de todo el mundo de la energía, así que empecemos por aquí.
+    <b>Potencia (P)</b> es qué tan rápido se usa o genera energía en un instante — se mide en <b>watts (W)</b> o kilowatts (kW).
+    <b>Energía (E)</b> es la potencia acumulada durante un tiempo — se mide en <b>kilowatt-hora (kWh)</b>, que es lo que te cobra la luz.
+    Un panel solar de 3 kW no "tiene" 3 kW guardados: los <i>produce</i> mientras el sol le da.
+  </p>
+
+  <section>
+    <h2>📈 Simulador: de potencia a energía</h2>
+    <div class="sub">Mueve la potencia y el tiempo, y observa cómo se acumula la energía en la gráfica.</div>
+    <div class="formula">Energía (kWh) = Potencia (kW) × Tiempo (h)</div>
+
+    <div class="control">
+      <label>Potencia <b id="pVal">3.0 kW</b></label>
+      <input type="range" id="pSlider" min="0.1" max="10" step="0.1" value="3">
+    </div>
+    <div class="control">
+      <label>Tiempo transcurrido <b id="tVal">5.0 h</b></label>
+      <input type="range" id="tSlider" min="0" max="24" step="0.5" value="5">
+    </div>
+
+    <canvas id="chart1" width="640" height="260"></canvas>
+
+    <div class="result-box">
+      <div class="result"><div class="k">Energía acumulada</div><div class="v" id="eResult">15.0 kWh</div></div>
+      <div class="result"><div class="k">Equivale a</div><div class="v" id="eCompare" style="font-size:14px; font-weight:600;">—</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🔍 ¿Cuánta potencia tienen las cosas?</h2>
+    <div class="sub">Referencia rápida de potencias típicas — útil para comparar tecnologías renovables entre sí.</div>
+    <div class="compare-row" id="refList"></div>
+  </section>
+
+  <section>
+    <h2>🔢 Unidades de energía: el lenguaje de la ingeniería</h2>
+    <div class="sub">
+      La unidad fundamental de energía del Sistema Internacional es el <b>Joule (J)</b> — el kWh es solo una unidad práctica que usa el sector eléctrico para facturar.
+      Cuando trabajas con calor (geotermia, biomasa, procesos térmicos), lo normal es usar <b>J, kJ, MJ o GJ</b>, porque ahí la energía viaja como calor, antes de convertirse (si acaso) en electricidad.
+    </div>
+    <div class="formula">1 kWh = 3.6 MJ = 3,600,000 J</div>
+
+    <div class="callout">💡 <b>¿Por qué geotermia se mide en Joules?</b> Un yacimiento geotérmico entrega calor: el fluido tiene una <b>entalpía</b> (contenido energético) en kJ/kg, y el flujo de calor de un pozo se reporta en MW o GJ/h. Solo al final, cuando ese calor mueve una turbina, se convierte en electricidad medible en kWh — y como viste en el Módulo 6, esa conversión pierde la mayoría de la energía original. Por eso los ingenieros de procesos térmicos casi nunca convierten a kWh hasta el último eslabón de la cadena.</div>
+
+    <h3 style="font-size:14px; margin: 18px 0 10px;">🧮 Conversor de unidades</h3>
+    <div class="conv-row">
+      <input type="number" id="convVal" value="1" step="any">
+      <select id="convUnit">
+        <option value="J">J (joule)</option>
+        <option value="kJ">kJ</option>
+        <option value="MJ">MJ</option>
+        <option value="GJ">GJ</option>
+        <option value="kWh" selected>kWh</option>
+        <option value="MWh">MWh</option>
+        <option value="kcal">kcal</option>
+        <option value="BTU">BTU</option>
+        <option value="tep">tep (ton. equiv. petróleo)</option>
+      </select>
+    </div>
+    <div class="table-wrap"><table class="ref-table" id="convTable"></table></div>
+  </section>
+
+  <section>
+    <h2>⛽ Poder calorífico: la energía "de fábrica" de cada recurso</h2>
+    <div class="sub">Cuánta energía contiene cada kilogramo o metro cúbico de un recurso — referencia clave para comparar biomasa, biogás e hidrógeno más adelante (Módulo 7).</div>
+    <div class="table-wrap">
+      <table class="ref-table">
+        <tr><th>Recurso</th><th>Energía específica</th></tr>
+        <tr><td>Hidrógeno (H₂, PCI/LHV)</td><td class="num">120 MJ/kg ≈ 33.3 kWh/kg</td></tr>
+        <tr><td>Gas natural / metano puro</td><td class="num">50 MJ/kg ≈ 9.9 kWh/m³</td></tr>
+        <tr><td>Diésel</td><td class="num">43 MJ/kg ≈ 11.9 kWh/kg</td></tr>
+        <tr><td>Biogás (60% CH₄)</td><td class="num">21-25 MJ/kg ≈ 6 kWh/m³</td></tr>
+        <tr><td>Madera seca</td><td class="num">15-18 MJ/kg</td></tr>
+        <tr><td>Carbón</td><td class="num">24-35 MJ/kg</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>🎯 Reto: llena el tanque de energía</h2>
+    <div class="challenge-target">Objetivo: genera <b id="targetVal">20 kWh</b> ajustando potencia y tiempo arriba. Sé lo más preciso posible.</div>
+    <button id="checkBtn">Comprobar</button>
+    <button class="secondary" id="newTargetBtn">Nuevo objetivo</button>
+    <div id="feedback"></div>
+  </section>
+
+  <div class="nav-end">
+    <a href="index.html">← Mapa de módulos</a>
+    <a href="modulo2.html" id="nextLink" style="visibility:hidden;">Siguiente: Eficiencia y pérdidas →</a>
+  </div>
+</div>
+
+<script>
+  const pSlider = document.getElementById('pSlider');
+  const tSlider = document.getElementById('tSlider');
+  const pVal = document.getElementById('pVal');
+  const tVal = document.getElementById('tVal');
+  const eResult = document.getElementById('eResult');
+  const eCompare = document.getElementById('eCompare');
+  const canvas = document.getElementById('chart1');
+  const ctx = canvas.getContext('2d');
+
+  const REFS = [
+    { name: 'Bombilla LED', p: 0.01, icon: '💡' },
+    { name: 'Refrigerador', p: 0.15, icon: '🧊' },
+    { name: 'Aire acondicionado', p: 1.5, icon: '❄️' },
+    { name: 'Auto eléctrico (carga)', p: 7, icon: '🚗' },
+    { name: 'Panel solar residencial', p: 5, icon: '☀️' },
+    { name: 'Aerogenerador pequeño', p: 10, icon: '🌬️' },
+    { name: 'Aerogenerador industrial', p: 2000, icon: '🌀' },
+    { name: 'Turbina hidroeléctrica media', p: 50000, icon: '💧' },
+  ];
+
+  function renderRefs() {
+    const list = document.getElementById('refList');
+    const maxLog = Math.log10(REFS[REFS.length - 1].p + 1);
+    list.innerHTML = REFS.map(r => {
+      const pct = Math.max(4, (Math.log10(r.p + 1) / maxLog) * 100);
+      const label = r.p >= 1000 ? (r.p / 1000).toFixed(0) + ' MW' : r.p >= 1 ? r.p + ' kW' : (r.p * 1000).toFixed(0) + ' W';
+      return `<div class="compare-item">
+        <span class="ic">${r.icon}</span>
+        <span style="width:170px;">${r.name}</span>
+        <div class="bar-wrap"><div class="bar" style="width:${pct}%"></div></div>
+        <span class="val">${label}</span>
+      </div>`;
+    }).join('');
+  }
+  renderRefs();
+
+  function drawChart(P, t) {
+    const w = canvas.width, h = canvas.height;
+    const padL = 55, padB = 30, padT = 15, padR = 15;
+    ctx.clearRect(0, 0, w, h);
+    const maxT = 24, maxE = 10 * 24; // worst case scale
+    const curMaxE = Math.max(P * maxT, 1);
+
+    const x0 = padL, x1 = w - padR, y0 = h - padB, y1 = padT;
+    const xScale = (v) => x0 + (v / maxT) * (x1 - x0);
+    const yScale = (v) => y0 - (v / curMaxE) * (y0 - y1);
+
+    // grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 6; i++) {
+      const gx = x0 + (i / 6) * (x1 - x0);
+      ctx.beginPath(); ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); ctx.stroke();
+    }
+    for (let i = 0; i <= 4; i++) {
+      const gy = y0 - (i / 4) * (y0 - y1);
+      ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.stroke();
+    }
+
+    // axes labels
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 6; i++) {
+      const hrs = (i / 6) * maxT;
+      ctx.fillText(hrs.toFixed(0) + 'h', x0 + (i / 6) * (x1 - x0), y0 + 16);
+    }
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const e = (i / 4) * curMaxE;
+      ctx.fillText(e.toFixed(0), x0 - 8, y0 - (i / 4) * (y0 - y1) + 4);
+    }
+    ctx.save();
+    ctx.translate(14, (y0 + y1) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('Energía (kWh)', 0, 0);
+    ctx.restore();
+
+    // line E(x) = P * x
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(xScale(0), yScale(0));
+    ctx.lineTo(xScale(maxT), yScale(P * maxT));
+    ctx.stroke();
+
+    // fill under curve up to t
+    ctx.fillStyle = 'rgba(245,158,11,0.18)';
+    ctx.beginPath();
+    ctx.moveTo(xScale(0), yScale(0));
+    ctx.lineTo(xScale(t), yScale(P * t));
+    ctx.lineTo(xScale(t), y0);
+    ctx.lineTo(xScale(0), y0);
+    ctx.closePath();
+    ctx.fill();
+
+    // current point
+    const px = xScale(t), py = yScale(P * t);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  function compareText(e) {
+    if (e < 0.5) return 'unos 30 min de secadora de pelo';
+    if (e < 5) return `cargar un celular ~${Math.round(e / 0.015)} veces`;
+    if (e < 20) return `~${(e / 0.15 / 24).toFixed(1)} días de un refrigerador`;
+    if (e < 100) return `~${(e / 7).toFixed(1)} cargas de auto eléctrico`;
+    return `consumo mensual aprox. de ${(e / 300).toFixed(1)} hogares`;
+  }
+
+  function update() {
+    const P = parseFloat(pSlider.value);
+    const t = parseFloat(tSlider.value);
+    pVal.textContent = P.toFixed(1) + ' kW';
+    tVal.textContent = t.toFixed(1) + ' h';
+    const E = P * t;
+    eResult.textContent = E.toFixed(1) + ' kWh';
+    eCompare.textContent = compareText(E);
+    drawChart(P, t);
+  }
+  pSlider.addEventListener('input', update);
+  tSlider.addEventListener('input', update);
+  update();
+
+  // Unit converter
+  const UNIT_TO_J = {
+    J: 1, kJ: 1e3, MJ: 1e6, GJ: 1e9,
+    kWh: 3.6e6, MWh: 3.6e9,
+    kcal: 4184, BTU: 1055.06,
+    tep: 4.187e10,
+  };
+  const UNIT_LABELS = {
+    J: 'Joules (J)', kJ: 'Kilojoules (kJ)', MJ: 'Megajoules (MJ)', GJ: 'Gigajoules (GJ)',
+    kWh: 'Kilowatt-hora (kWh)', MWh: 'Megawatt-hora (MWh)',
+    kcal: 'Kilocalorías (kcal)', BTU: 'BTU', tep: 'Ton. equiv. petróleo (tep)',
+  };
+
+  function fmtSci(n) {
+    if (n === 0) return '0';
+    const abs = Math.abs(n);
+    if (abs >= 1e9 || abs < 1e-4) return n.toExponential(3);
+    if (abs >= 1000) return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }
+
+  function updateConverter() {
+    const val = parseFloat(document.getElementById('convVal').value) || 0;
+    const unit = document.getElementById('convUnit').value;
+    const valInJ = val * UNIT_TO_J[unit];
+    const table = document.getElementById('convTable');
+    const rows = Object.keys(UNIT_TO_J).map(u => {
+      const converted = valInJ / UNIT_TO_J[u];
+      const isSame = u === unit;
+      return `<tr${isSame ? ' class="highlight"' : ''}><td>${UNIT_LABELS[u]}</td><td class="num">${fmtSci(converted)}</td></tr>`;
+    }).join('');
+    table.innerHTML = `<tr><th>Unidad</th><th>Equivalente</th></tr>${rows}`;
+  }
+  document.getElementById('convVal').addEventListener('input', updateConverter);
+  document.getElementById('convUnit').addEventListener('change', updateConverter);
+  updateConverter();
+
+  // Challenge
+  let target = 20;
+  function newTarget() {
+    target = Math.round((5 + Math.random() * 60));
+    document.getElementById('targetVal').textContent = target + ' kWh';
+    document.getElementById('feedback').className = '';
+  }
+  document.getElementById('newTargetBtn').addEventListener('click', newTarget);
+
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    const P = parseFloat(pSlider.value);
+    const t = parseFloat(tSlider.value);
+    const E = P * t;
+    const errPct = Math.abs(E - target) / target * 100;
+    const fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    if (errPct <= 5) {
+      const score = Math.max(60, Math.round(100 - errPct * 4));
+      fb.className = 'feedback show ok';
+      fb.textContent = `¡Excelente! Generaste ${E.toFixed(1)} kWh (objetivo: ${target} kWh). Puntaje: ${score}/100.`;
+      saveProgress(score);
+      document.getElementById('nextLink').style.visibility = 'visible';
+    } else {
+      fb.className = 'feedback show no';
+      fb.textContent = `Generaste ${E.toFixed(1)} kWh, el objetivo era ${target} kWh (error de ${errPct.toFixed(0)}%). Ajusta potencia o tiempo e inténtalo de nuevo.`;
+    }
+  });
+
+  function saveProgress(score) {
+    const key = 'energia_progress';
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    const prevScore = (progress.modulo1 && progress.modulo1.score) || 0;
+    progress.modulo1 = { completed: true, score: Math.max(prevScore, score) };
+    localStorage.setItem(key, JSON.stringify(progress));
+  }
+
+  newTarget();
+</script>
+</body>
+</html>

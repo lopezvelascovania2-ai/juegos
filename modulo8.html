@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8. Evaluación de proyectos</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #24334a; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #eab308; --accent2: #ca8a04;
+    --ok: #22c55e; --bad: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--text); }
+  .pill { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  .lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 20px; }
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; margin-bottom: 18px;
+  }
+  section h2 { margin: 0 0 6px; font-size: 16px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .glossary { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+  .g-item { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.5; }
+  .g-item b { color: var(--accent); }
+  .formula {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 13.5px; text-align: center; margin: 10px 0 16px;
+    font-family: "SF Mono", Menlo, monospace; color: var(--accent);
+  }
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .control label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  canvas { width: 100%; height: auto; background: var(--panel2); border-radius: 10px; border: 1px solid var(--border); display: block; }
+  .result-box { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .result { flex: 1; min-width: 130px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .result .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .result .v { font-size: 19px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .result.verdict .v.ok { color: var(--ok); }
+  .result.verdict .v.bad { color: var(--bad); }
+  .challenge-target { font-size: 15px; margin-bottom: 10px; }
+  .challenge-target b { color: var(--accent); }
+  button {
+    background: var(--accent); color: #241d00; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: var(--accent2); color: #fff; }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  #feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #feedback.show { display: block; }
+  #feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--ok); color: #86efac; }
+  #feedback.no { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+  .nav-end { display: flex; justify-content: space-between; margin-top: 24px; }
+  .nav-end a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .final-banner {
+    text-align: center; background: linear-gradient(135deg, rgba(234,179,8,0.15), rgba(34,197,94,0.1));
+    border: 1px solid var(--accent); border-radius: 14px; padding: 20px; margin-top: 10px; display: none;
+  }
+  .final-banner.show { display: block; }
+  .final-banner h2 { margin: 0 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="index.html">← Volver al mapa</a>
+    <span class="pill">Módulo 8 de 8</span>
+  </div>
+
+  <h1>💰 Evaluación de proyectos</h1>
+  <p class="lead">
+    Un proyecto renovable no es bueno solo porque funcione técnicamente — necesita ser viable económicamente. Este módulo junta todo lo anterior
+    (potencia, eficiencia, factor de planta) con los números del negocio.
+  </p>
+
+  <div class="glossary">
+    <div class="g-item"><b>CAPEX</b> (Capital Expenditure): la inversión inicial — comprar e instalar paneles, turbinas, tuberías, etc.</div>
+    <div class="g-item"><b>OPEX</b> (Operating Expenditure): el costo anual de operar y mantener el proyecto — limpieza, repuestos, personal, seguros.</div>
+    <div class="g-item"><b>LCOE</b> (Levelized Cost of Energy): el costo "nivelado" de cada MWh producido a lo largo de la vida del proyecto — el número clave para comparar tecnologías entre sí.</div>
+    <div class="g-item"><b>VAN</b> (Valor Actual Neto / NPV): la suma de todos los flujos de caja futuros del proyecto traídos a valor de hoy. Si VAN &gt; 0, el proyecto genera más valor del que cuesta.</div>
+    <div class="g-item"><b>TIR</b> (Tasa Interna de Retorno / IRR): la rentabilidad "real" del proyecto — la tasa de descuento que haría VAN = 0. Si TIR supera la tasa exigida por el inversionista, el proyecto conviene.</div>
+    <div class="g-item"><b>PPA</b> (Power Purchase Agreement): contrato de largo plazo (10-25 años) donde un comprador se compromete a pagar un precio fijo por la energía — le da certeza financiera al proyecto para conseguir financiamiento bancario.</div>
+  </div>
+
+  <section>
+    <h2>📐 Simulador: calcula el LCOE de tu proyecto</h2>
+    <div class="sub">Ajusta los parámetros de un proyecto renovable y observa cómo cambian su costo por MWh y el tiempo de retorno de inversión.</div>
+    <div class="formula">LCOE = (CAPEX × CRF + OPEX anual) / Energía anual</div>
+
+    <div class="control"><label>CAPEX (inversión inicial) <b id="capexVal">$2,000,000</b></label><input type="range" id="capex" min="200000" max="10000000" step="50000" value="2000000"></div>
+    <div class="control"><label>OPEX anual (% del CAPEX) <b id="opexVal">3%</b></label><input type="range" id="opexPct" min="1" max="8" step="0.5" value="3"></div>
+    <div class="control"><label>Energía generada al año <b id="energyVal">4,000 MWh</b></label><input type="range" id="energyAnnual" min="200" max="20000" step="100" value="4000"></div>
+    <div class="control"><label>Vida útil del proyecto <b id="lifeVal">20 años</b></label><input type="range" id="life" min="10" max="30" step="1" value="20"></div>
+    <div class="control"><label>Tasa de descuento <b id="rateVal">6%</b></label><input type="range" id="rate" min="2" max="14" step="0.5" value="6"></div>
+    <div class="control"><label>Precio de venta de energía (tipo PPA) <b id="priceVal">$60 /MWh</b></label><input type="range" id="price" min="20" max="150" step="1" value="60"></div>
+    <div class="control"><label>Degradación anual de la producción <b id="degVal">0.5%</b></label><input type="range" id="degradation" min="0" max="1.5" step="0.1" value="0.5"></div>
+
+    <div class="result-box">
+      <div class="result"><div class="k">LCOE</div><div class="v" id="lcoeResult">$63 /MWh</div></div>
+      <div class="result"><div class="k">Payback simple</div><div class="v" id="paybackResult">10.5 años</div></div>
+      <div class="result verdict"><div class="k">¿Viable?</div><div class="v" id="viableResult">—</div></div>
+    </div>
+    <div class="result-box">
+      <div class="result"><div class="k">VAN (a la tasa de descuento)</div><div class="v" id="vanResult">$0</div></div>
+      <div class="result"><div class="k">TIR</div><div class="v" id="tirResult">—%</div></div>
+    </div>
+
+    <canvas id="chart8" width="640" height="240" style="margin-top:14px;"></canvas>
+    <div class="callout" style="background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.3); border-radius:10px; padding:10px 14px; font-size:13px; margin-top:12px; line-height:1.5;">💡 El flujo de caja ya incluye la <b>degradación anual</b> de la producción (típica en paneles solares, ~0.5%/año) — por eso la curva no crece en línea perfectamente recta. El <b>precio de venta</b> aquí representa lo que negociarías en un <b>PPA</b>: cuanto más bajo y "seguro" el precio contratado, más fácil conseguir financiamiento, pero menor el retorno.</div>
+  </section>
+
+  <section>
+    <h2>🎯 Reto: haz el proyecto viable</h2>
+    <div class="challenge-target">El precio de venta de mercado es <b id="targetVal">$60/MWh</b>. Ajusta CAPEX, OPEX, energía anual o vida útil arriba hasta que el LCOE quede <b>por debajo</b> del precio de mercado, con al menos 10% de margen.</div>
+    <button id="checkBtn">Comprobar</button>
+    <button class="secondary" id="newTargetBtn">Nuevo escenario</button>
+    <div id="feedback"></div>
+  </section>
+
+  <div class="final-banner" id="finalBanner">
+    <h2>🎉 ¡Completaste el recorrido!</h2>
+    <p>Terminaste los 8 módulos: desde energía y potencia hasta evaluación de proyectos. Vuelve al mapa para repasar cualquier tema o mejorar tu puntaje.</p>
+    <a href="index.html"><button>Volver al mapa</button></a>
+  </div>
+
+  <div class="nav-end">
+    <a href="modulo7.html">← Anterior</a>
+    <a href="index.html">Mapa de módulos →</a>
+  </div>
+</div>
+
+<script>
+  const ids = ['capex', 'opexPct', 'energyAnnual', 'life', 'rate', 'price', 'degradation'];
+  const els = {}; ids.forEach(id => els[id] = document.getElementById(id));
+  const canvas = document.getElementById('chart8');
+  const ctx = canvas.getContext('2d');
+
+  function fmtMoney(n) {
+    return '$' + Math.round(n).toLocaleString();
+  }
+
+  function compute() {
+    const CAPEX = parseFloat(els.capex.value);
+    const opexPct = parseFloat(els.opexPct.value) / 100;
+    const energyAnnual = parseFloat(els.energyAnnual.value);
+    const life = parseFloat(els.life.value);
+    const r = parseFloat(els.rate.value) / 100;
+    const price = parseFloat(els.price.value);
+    const degradation = parseFloat(els.degradation.value) / 100;
+
+    const OPEX = CAPEX * opexPct;
+    const CRF = r === 0 ? 1 / life : (r * Math.pow(1 + r, life)) / (Math.pow(1 + r, life) - 1);
+    const annualizedCapex = CAPEX * CRF;
+    const LCOE = (annualizedCapex + OPEX) / energyAnnual;
+
+    const incomeAnnual = energyAnnual * price;
+    const netAnnual = incomeAnnual - OPEX;
+    const payback = netAnnual > 0 ? CAPEX / netAnnual : Infinity;
+
+    const years = Math.round(life);
+    const yearlyNet = [];
+    for (let y = 1; y <= years; y++) {
+      const energyY = energyAnnual * Math.pow(1 - degradation, y - 1);
+      yearlyNet.push(energyY * price - OPEX);
+    }
+    const VAN = npv(r, CAPEX, yearlyNet);
+    const TIR = computeIRR(CAPEX, yearlyNet);
+
+    return { CAPEX, OPEX, energyAnnual, life, r, price, degradation, LCOE, incomeAnnual, netAnnual, payback, yearlyNet, VAN, TIR };
+  }
+
+  function npv(rate, CAPEX, yearlyNet) {
+    let sum = -CAPEX;
+    yearlyNet.forEach((net, i) => { sum += net / Math.pow(1 + rate, i + 1); });
+    return sum;
+  }
+
+  function computeIRR(CAPEX, yearlyNet) {
+    let lo = -0.9, hi = 5.0;
+    let fLo = npv(lo, CAPEX, yearlyNet);
+    let fHi = npv(hi, CAPEX, yearlyNet);
+    if (fLo * fHi > 0) return null;
+    for (let i = 0; i < 80; i++) {
+      const mid = (lo + hi) / 2;
+      const fMid = npv(mid, CAPEX, yearlyNet);
+      if (Math.abs(fMid) < 1) return mid;
+      if ((fLo < 0) === (fMid < 0)) { lo = mid; fLo = fMid; } else { hi = mid; }
+    }
+    return (lo + hi) / 2;
+  }
+
+  function drawCashflow(d) {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const padL = 65, padB = 30, padT = 15, padR = 15;
+    const x0 = padL, x1 = w - padR, y0 = h - padB, y1 = padT;
+
+    const years = Math.round(d.life);
+    const cum = [-d.CAPEX];
+    for (let y = 1; y <= years; y++) cum.push(cum[y - 1] + d.yearlyNet[y - 1]);
+
+    const maxAbs = Math.max(...cum.map(Math.abs), 1);
+    const yZero = y0 - ((0 - (-maxAbs)) / (maxAbs - -maxAbs)) * (y0 - y1);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    for (let i = 0; i <= 6; i++) {
+      const gx = x0 + (i / 6) * (x1 - x0);
+      ctx.beginPath(); ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); ctx.stroke();
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath(); ctx.moveTo(x0, yZero); ctx.lineTo(x1, yZero); ctx.stroke();
+
+    ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+    ctx.fillText('$0', x0 - 8, yZero + 4);
+    ctx.fillText(fmtMoney(maxAbs), x0 - 8, y1 + 10);
+    ctx.fillText(fmtMoney(-maxAbs), x0 - 8, y0 + 2);
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 6; i++) {
+      const yr = Math.round((i / 6) * years);
+      ctx.fillText('Año ' + yr, x0 + (i / 6) * (x1 - x0), y0 + 16);
+    }
+
+    const xScale = (y) => x0 + (y / years) * (x1 - x0);
+    const yScale = (v) => y0 - ((v - (-maxAbs)) / (maxAbs - -maxAbs)) * (y0 - y1);
+
+    let breakEvenYear = null;
+    ctx.strokeStyle = '#eab308'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    cum.forEach((v, i) => {
+      const px = xScale(i), py = yScale(v);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      if (breakEvenYear === null && v >= 0) breakEvenYear = i;
+    });
+    ctx.stroke();
+
+    if (breakEvenYear !== null) {
+      const px = xScale(breakEvenYear);
+      ctx.strokeStyle = 'rgba(34,197,94,0.6)'; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(px, y0); ctx.lineTo(px, y1); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function update() {
+    els.capex && (document.getElementById('capexVal').textContent = fmtMoney(parseFloat(els.capex.value)));
+    document.getElementById('opexVal').textContent = els.opexPct.value + '%';
+    document.getElementById('energyVal').textContent = parseFloat(els.energyAnnual.value).toLocaleString() + ' MWh';
+    document.getElementById('lifeVal').textContent = els.life.value + ' años';
+    document.getElementById('rateVal').textContent = els.rate.value + '%';
+    document.getElementById('priceVal').textContent = '$' + els.price.value + ' /MWh';
+    document.getElementById('degVal').textContent = els.degradation.value + '%';
+
+    const d = compute();
+    document.getElementById('lcoeResult').textContent = '$' + d.LCOE.toFixed(1) + ' /MWh';
+    document.getElementById('paybackResult').textContent = isFinite(d.payback) ? d.payback.toFixed(1) + ' años' : '∞';
+    const verdictEl = document.getElementById('viableResult');
+    if (d.LCOE < d.price) {
+      verdictEl.textContent = 'Sí ✅';
+      verdictEl.className = 'v ok';
+    } else {
+      verdictEl.textContent = 'No ❌';
+      verdictEl.className = 'v bad';
+    }
+
+    const vanEl = document.getElementById('vanResult');
+    vanEl.textContent = fmtMoney(d.VAN);
+    vanEl.style.color = d.VAN >= 0 ? 'var(--ok)' : 'var(--bad)';
+    const tirEl = document.getElementById('tirResult');
+    if (d.TIR === null) {
+      tirEl.textContent = 'N/D';
+      tirEl.style.color = '';
+    } else {
+      tirEl.textContent = (d.TIR * 100).toFixed(1) + '%';
+      tirEl.style.color = d.TIR >= d.r ? 'var(--ok)' : 'var(--bad)';
+    }
+
+    drawCashflow(d);
+    return d;
+  }
+  ids.forEach(id => els[id].addEventListener('input', update));
+  update();
+
+  // Challenge
+  let targetPrice = 60;
+  function newTarget() {
+    targetPrice = Math.round(30 + Math.random() * 80);
+    els.price.value = targetPrice;
+    document.getElementById('targetVal').textContent = '$' + targetPrice + '/MWh';
+    document.getElementById('feedback').className = '';
+    update();
+  }
+  document.getElementById('newTargetBtn').addEventListener('click', newTarget);
+
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    const d = update();
+    const margin = (d.price - d.LCOE) / d.price * 100;
+    const fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    if (margin >= 10) {
+      const score = Math.min(100, Math.max(60, Math.round(60 + margin)));
+      fb.className = 'feedback show ok';
+      fb.textContent = `¡Proyecto viable! LCOE de $${d.LCOE.toFixed(1)}/MWh vs precio de $${d.price}/MWh (margen: ${margin.toFixed(0)}%). Puntaje: ${score}/100.`;
+      saveProgress(score);
+      document.getElementById('finalBanner').classList.add('show');
+    } else {
+      fb.className = 'feedback show no';
+      fb.textContent = `LCOE de $${d.LCOE.toFixed(1)}/MWh vs precio de $${d.price}/MWh — margen insuficiente (${margin.toFixed(0)}%). Baja el CAPEX/OPEX o sube la energía anual generada.`;
+    }
+  });
+
+  function saveProgress(score) {
+    const key = 'energia_progress';
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    const prevScore = (progress.modulo8 && progress.modulo8.score) || 0;
+    progress.modulo8 = { completed: true, score: Math.max(prevScore, score) };
+    localStorage.setItem(key, JSON.stringify(progress));
+  }
+
+  newTarget();
+</script>
+</body>
+</html>

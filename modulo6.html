@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6. Termodinámica aplicada</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #24334a; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #a78bfa; --accent2: #8b5cf6;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--text); }
+  .pill { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  .lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 20px; }
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; margin-bottom: 18px;
+  }
+  section h2 { margin: 0 0 6px; font-size: 16px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .laws { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+  .law { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.5; }
+  .law b { color: var(--accent); }
+  .formula {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 15px; text-align: center; margin: 10px 0 16px;
+    font-family: "SF Mono", Menlo, monospace; color: var(--accent);
+  }
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .control label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  canvas { width: 100%; height: auto; background: var(--panel2); border-radius: 10px; border: 1px solid var(--border); display: block; }
+  .result-box { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .result { flex: 1; min-width: 140px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .result .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .result .v { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .callout { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13.5px; margin-top: 10px; line-height: 1.5; }
+  .challenge-target { font-size: 15px; margin-bottom: 10px; }
+  .challenge-target b { color: var(--accent); }
+  button {
+    background: var(--accent); color: #1c1230; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: var(--accent2); color: #fff; }
+  button.secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  #feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #feedback.show { display: block; }
+  #feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--ok); color: #86efac; }
+  #feedback.no { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+  .nav-end { display: flex; justify-content: space-between; margin-top: 24px; }
+  .nav-end a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .table-wrap { overflow-x: auto; margin-bottom: 6px; }
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .ref-table th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .ref-table td.num { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .plant-pick { background: var(--panel2); border: 1px solid var(--accent); border-radius: 10px; padding: 14px; margin-top: 12px; }
+  .plant-pick h4 { margin: 0 0 6px; font-size: 15px; color: var(--accent); }
+  .plant-pick p { margin: 0; font-size: 13px; color: var(--text); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="index.html">← Volver al mapa</a>
+    <span class="pill">Módulo 6 de 8</span>
+  </div>
+
+  <h1>♨️ Termodinámica aplicada</h1>
+  <p class="lead">
+    Cuando una tecnología usa <b>calor</b> para generar electricidad (geotérmica, biomasa, algunas de biogás), no puede convertir todo ese calor en trabajo útil.
+    La termodinámica pone un límite físico duro a la eficiencia — y ese límite depende solo de dos temperaturas.
+  </p>
+
+  <div class="laws">
+    <div class="law"><b>1ª Ley (conservación):</b> la energía no se crea ni se destruye, solo se transforma. Toda la energía que entra a una planta sale, como electricidad o como calor residual.</div>
+    <div class="law"><b>2ª Ley (límite):</b> no se puede convertir el 100% del calor en trabajo. Siempre hay que "botar" algo de calor a un foco frío (el ambiente, un río, una torre de enfriamiento).</div>
+  </div>
+
+  <section>
+    <h2>🌡️ Simulador: límite de Carnot</h2>
+    <div class="sub">El ciclo de Carnot marca la <b>máxima eficiencia teórica</b> posible entre una fuente caliente (ej: vapor geotérmico) y una fría (ambiente).</div>
+    <div class="formula">η_Carnot = 1 − (T_frío / T_caliente) &nbsp;[Kelvin]</div>
+
+    <div class="control">
+      <label>Temperatura del recurso (foco caliente) <b id="thVal">180 °C</b></label>
+      <input type="range" id="thSlider" min="80" max="600" step="5" value="180">
+    </div>
+    <div class="control">
+      <label>Temperatura ambiente (foco frío) <b id="tcVal">25 °C</b></label>
+      <input type="range" id="tcSlider" min="0" max="40" step="1" value="25">
+    </div>
+
+    <canvas id="chart6" width="640" height="240"></canvas>
+
+    <div class="result-box">
+      <div class="result"><div class="k">Eficiencia de Carnot (límite)</div><div class="v" id="carnotResult">34.2%</div></div>
+      <div class="result"><div class="k">Eficiencia real típica (~55% de Carnot)</div><div class="v" id="realResult">18.8%</div></div>
+    </div>
+    <div class="callout">💡 Por eso una geotérmica de baja temperatura (~150°C) ronda 10-15% de eficiencia real, mientras una planta de biomasa a más de 500°C puede superar 30%. Cuanto mayor la diferencia de temperatura, más trabajo útil se puede extraer.</div>
+  </section>
+
+  <section>
+    <h2>🏭 Tipos reales de planta geotérmica</h2>
+    <div class="sub">
+      El diseño de la planta depende directamente de la <b>entalpía</b> (h, en kJ/kg) del fluido geotérmico — el contenido de energía por kilogramo, la misma unidad que viste en el Módulo 1.
+      A mayor temperatura del recurso, mayor entalpía disponible y más simple/eficiente puede ser la planta.
+    </div>
+
+    <div class="control">
+      <label>Temperatura del recurso geotérmico <b id="plantTVal">180 °C</b></label>
+      <input type="range" id="plantT" min="80" max="320" step="5" value="180">
+    </div>
+    <div class="plant-pick" id="plantPick">
+      <h4>Flash (simple/doble destello)</h4>
+      <p>El agua a presión se libera de golpe ("flashea") a vapor al bajar la presión, que mueve la turbina directamente.</p>
+    </div>
+
+    <div class="table-wrap" style="margin-top:16px;">
+      <table class="ref-table">
+        <tr><th>Tipo de planta</th><th>Temperatura del recurso</th><th>Eficiencia real</th></tr>
+        <tr><td>Vapor seco (dry steam)</td><td class="num">&gt; 235 °C</td><td class="num">15 – 20%</td></tr>
+        <tr><td>Flash (simple/doble)</td><td class="num">150 – 235 °C</td><td class="num">10 – 17%</td></tr>
+        <tr><td>Binaria (ciclo Rankine orgánico, ORC)</td><td class="num">80 – 150 °C</td><td class="num">8 – 13%</td></tr>
+      </table>
+    </div>
+    <div class="callout">💡 La tecnología <b>binaria (ORC)</b> es la que ha abierto la geotermia a muchos más países: usa un fluido secundario de bajo punto de ebullición (no agua) para mover la turbina, aprovechando recursos "de baja entalpía" que antes no eran viables. El fluido geotérmico nunca toca la turbina — solo cede su calor a través de un intercambiador, evitando corrosión.</div>
+  </section>
+
+  <section>
+    <h2>🎯 Reto: alcanza el límite de Carnot</h2>
+    <div class="challenge-target">Con la temperatura ambiente fija, ajusta la temperatura del recurso para lograr una eficiencia de Carnot de <b id="targetVal">40%</b>.</div>
+    <button id="checkBtn">Comprobar</button>
+    <button class="secondary" id="newTargetBtn">Nuevo objetivo</button>
+    <div id="feedback"></div>
+  </section>
+
+  <div class="nav-end">
+    <a href="modulo5.html">← Anterior</a>
+    <a href="modulo7.html" id="nextLink" style="visibility:hidden;">Siguiente: Tecnologías renovables →</a>
+  </div>
+</div>
+
+<script>
+  const thSlider = document.getElementById('thSlider');
+  const tcSlider = document.getElementById('tcSlider');
+  const canvas = document.getElementById('chart6');
+  const ctx = canvas.getContext('2d');
+
+  function carnot(thC, tcC) {
+    const Th = thC + 273.15, Tc = tcC + 273.15;
+    return Math.max(0, 1 - Tc / Th);
+  }
+
+  function drawChart(thC, tcC) {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const padL = 55, padB = 30, padT = 15, padR = 15;
+    const x0 = padL, x1 = w - padR, y0 = h - padB, y1 = padT;
+    const maxTh = 600;
+    const xScale = (v) => x0 + (v / maxTh) * (x1 - x0);
+    const yScale = (e) => y0 - Math.min(e, 1) * (y0 - y1);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    for (let i = 0; i <= 6; i++) {
+      const gx = x0 + (i / 6) * (x1 - x0);
+      ctx.beginPath(); ctx.moveTo(gx, y0); ctx.lineTo(gx, y1); ctx.stroke();
+    }
+    for (let i = 0; i <= 4; i++) {
+      const gy = y0 - (i / 4) * (y0 - y1);
+      ctx.beginPath(); ctx.moveTo(x0, gy); ctx.lineTo(x1, gy); ctx.stroke();
+    }
+    ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    for (let i = 0; i <= 6; i++) ctx.fillText(((i / 6) * maxTh).toFixed(0) + '°C', x0 + (i / 6) * (x1 - x0), y0 + 16);
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) ctx.fillText((((i / 4)) * 100).toFixed(0) + '%', x0 - 8, y0 - (i / 4) * (y0 - y1) + 4);
+
+    ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let t = 80; t <= maxTh; t += 5) {
+      const e = carnot(t, tcC);
+      const px = xScale(t), py = yScale(e);
+      if (t === 80) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // real efficiency dashed line (55% of Carnot)
+    ctx.strokeStyle = 'rgba(167,139,250,0.5)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let t = 80; t <= maxTh; t += 5) {
+      const e = carnot(t, tcC) * 0.55;
+      const px = xScale(t), py = yScale(e);
+      if (t === 80) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const e = carnot(thC, tcC);
+    const px = xScale(thC), py = yScale(e);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  function update() {
+    const th = parseFloat(thSlider.value);
+    const tc = parseFloat(tcSlider.value);
+    document.getElementById('thVal').textContent = th + ' °C';
+    document.getElementById('tcVal').textContent = tc + ' °C';
+    const eff = carnot(th, tc);
+    document.getElementById('carnotResult').textContent = (eff * 100).toFixed(1) + '%';
+    document.getElementById('realResult').textContent = (eff * 0.55 * 100).toFixed(1) + '%';
+    drawChart(th, tc);
+    return eff;
+  }
+  thSlider.addEventListener('input', update);
+  tcSlider.addEventListener('input', update);
+  update();
+
+  // Plant type picker
+  const plantT = document.getElementById('plantT');
+  const PLANT_TYPES = [
+    { max: 150, name: 'Binaria (ciclo Rankine orgánico, ORC)', desc: 'Recurso de baja entalpía. Un fluido secundario de bajo punto de ebullición mueve la turbina; el agua geotérmica nunca la toca. Eficiencia real 8-13%.' },
+    { max: 235, name: 'Flash (simple/doble destello)', desc: 'El agua a presión se libera de golpe ("flashea") a vapor al bajar la presión, que mueve la turbina directamente. Eficiencia real 10-17%.' },
+    { max: Infinity, name: 'Vapor seco (dry steam)', desc: 'El pozo entrega vapor casi puro directo a la turbina, sin necesitar separación. La tecnología geotérmica más antigua y simple. Eficiencia real 15-20%.' },
+  ];
+
+  function updatePlantPick() {
+    const t = parseFloat(plantT.value);
+    document.getElementById('plantTVal').textContent = t + ' °C';
+    const type = PLANT_TYPES.find(p => t <= p.max);
+    const pick = document.getElementById('plantPick');
+    pick.innerHTML = `<h4>${type.name}</h4><p>${type.desc}</p>`;
+  }
+  plantT.addEventListener('input', updatePlantPick);
+  updatePlantPick();
+
+  // Challenge
+  let target = 40;
+  function newTarget() {
+    target = Math.round(20 + Math.random() * 45);
+    document.getElementById('targetVal').textContent = target + '%';
+    document.getElementById('feedback').className = '';
+  }
+  document.getElementById('newTargetBtn').addEventListener('click', newTarget);
+
+  document.getElementById('checkBtn').addEventListener('click', () => {
+    const eff = update() * 100;
+    const errPct = Math.abs(eff - target);
+    const fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    if (errPct <= 2) {
+      const score = Math.max(60, Math.round(100 - errPct * 15));
+      fb.className = 'feedback show ok';
+      fb.textContent = `¡Correcto! Lograste ${eff.toFixed(1)}% (objetivo: ${target}%). Puntaje: ${score}/100.`;
+      saveProgress(score);
+      document.getElementById('nextLink').style.visibility = 'visible';
+    } else {
+      fb.className = 'feedback show no';
+      fb.textContent = `Lograste ${eff.toFixed(1)}%, el objetivo era ${target}%. Ajusta la temperatura del recurso e inténtalo de nuevo.`;
+    }
+  });
+
+  function saveProgress(score) {
+    const key = 'energia_progress';
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    const prevScore = (progress.modulo6 && progress.modulo6.score) || 0;
+    progress.modulo6 = { completed: true, score: Math.max(prevScore, score) };
+    localStorage.setItem(key, JSON.stringify(progress));
+  }
+
+  newTarget();
+</script>
+</body>
+</html>

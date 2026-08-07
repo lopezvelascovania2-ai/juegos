@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7. Tecnologías renovables</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel2: #24334a; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8;
+    --accent: #22c55e; --accent2: #16a34a;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px 16px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .back { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .back:hover { color: var(--text); }
+  .pill { background: var(--panel2); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--muted); }
+  h1 { font-size: 24px; margin: 4px 0 4px; }
+  .lead { color: var(--muted); font-size: 14.5px; line-height: 1.55; margin-bottom: 20px; }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tab-btn {
+    background: var(--panel); border: 1px solid var(--border); color: var(--muted);
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 600;
+  }
+  .tab-btn.active { background: var(--accent); color: #052e16; border-color: var(--accent); }
+
+  section {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 18px; margin-bottom: 18px; display: none;
+  }
+  section.active { display: block; }
+  section h2 { margin: 0 0 6px; font-size: 16px; }
+  section .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
+  .formula {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; font-size: 14px; text-align: center; margin: 10px 0 16px;
+    font-family: "SF Mono", Menlo, monospace; color: var(--accent);
+  }
+  .control { margin-bottom: 14px; }
+  .control label { display: flex; justify-content: space-between; font-size: 13.5px; margin-bottom: 6px; }
+  .control label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  canvas { width: 100%; height: auto; background: var(--panel2); border-radius: 10px; border: 1px solid var(--border); display: block; }
+  .result-box { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .result { flex: 1; min-width: 140px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
+  .result .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .result .v { font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 2px; }
+  .callout { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-top: 10px; line-height: 1.5; }
+
+  .info-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; font-size: 13.5px; line-height: 1.55; }
+
+  .quiz-q { margin-bottom: 16px; }
+  .quiz-q p { font-size: 14px; margin: 0 0 8px; font-weight: 600; }
+  .quiz-opts { display: flex; flex-direction: column; gap: 6px; }
+  .quiz-opt {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; font-size: 13.5px; cursor: pointer;
+  }
+  .quiz-opt:hover { border-color: var(--accent); }
+  .quiz-opt.selected { border-color: var(--accent); background: rgba(34,197,94,0.1); }
+  .quiz-opt.correct { border-color: var(--ok); background: rgba(34,197,94,0.18); }
+  .quiz-opt.wrong { border-color: #ef4444; background: rgba(239,68,68,0.12); }
+
+  button {
+    background: var(--accent); color: #052e16; border: none; padding: 10px 20px;
+    border-radius: 8px; font-size: 14.5px; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: var(--accent2); color: #fff; }
+  #feedback { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 8px; display: none; }
+  #feedback.show { display: block; }
+  #feedback.ok { background: rgba(34,197,94,0.12); border: 1px solid var(--ok); color: #86efac; }
+  #feedback.no { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #fca5a5; }
+  .nav-end { display: flex; justify-content: space-between; margin-top: 24px; }
+  .nav-end a { color: var(--muted); text-decoration: none; font-size: 14px; }
+  .how { background: var(--panel2); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; font-size: 13px; line-height: 1.55; margin: 12px 0 16px; }
+  .how b { color: var(--accent); }
+  .table-wrap { overflow-x: auto; margin-bottom: 6px; }
+  .ref-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 9px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .ref-table th { color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
+  .ref-table td.num { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back" href="index.html">← Volver al mapa</a>
+    <span class="pill">Módulo 7 de 8</span>
+  </div>
+
+  <h1>🌎 Tecnologías renovables</h1>
+  <p class="lead">
+    Con la física de los módulos anteriores ya puedes entender cómo calcula cada tecnología su potencia. Explora cada una: cuál es su recurso,
+    cómo se transforma, y qué la limita.
+  </p>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="solar">☀️ Solar FV</button>
+    <button class="tab-btn" data-tab="eolica">🌬️ Eólica</button>
+    <button class="tab-btn" data-tab="hidraulica">💧 Hidráulica</button>
+    <button class="tab-btn" data-tab="geo">♨️ Geotérmica</button>
+    <button class="tab-btn" data-tab="biogas">🌱 Biogás/Metano</button>
+    <button class="tab-btn" data-tab="h2">🧪 Hidrógeno</button>
+    <button class="tab-btn" data-tab="otras">🌊 Otras</button>
+  </div>
+
+  <section id="solar" class="active">
+    <h2>☀️ Solar fotovoltaica</h2>
+    <div class="sub"><b>Recurso:</b> radiación solar (irradiancia). <b>Transformación:</b> efecto fotovoltaico — fotones liberan electrones en el silicio directamente a electricidad DC. <b>Límite:</b> eficiencia del panel (12-22% comercial) y sombras/temperatura.</div>
+    <div class="how">🔬 <b>Cómo funciona:</b> la célula es una unión <b>p-n</b> de silicio. Un fotón con suficiente energía libera un electrón, y el campo eléctrico interno de la unión lo empuja en una dirección — así nace corriente DC sin partes móviles. <b>Monocristalino</b> (silicio puro, más caro, ~20-22%), <b>policristalino</b> (más barato, ~15-18%) y <b>capa fina</b> (CdTe/CIGS, flexible, ~10-13%, útil en fachadas curvas). Un panel pierde ~0.3-0.5% de eficiencia por cada °C sobre 25°C — por eso la ventilación trasera importa en el diseño del montaje. Degradación anual típica: ~0.5%/año.</div>
+    <div class="formula">P (kW) = G (kW/m²) × Área (m²) × η_panel</div>
+    <div class="control"><label>Irradiancia (G) <b id="solGVal">1.0 kW/m²</b></label><input type="range" id="solG" min="0.1" max="1.1" step="0.05" value="1"></div>
+    <div class="control"><label>Área de paneles <b id="solAVal">20 m²</b></label><input type="range" id="solA" min="1" max="100" step="1" value="20"></div>
+    <div class="control"><label>Eficiencia del panel <b id="solEVal">20%</b></label><input type="range" id="solE" min="10" max="24" step="0.5" value="20"></div>
+    <div class="result-box"><div class="result"><div class="k">Potencia generada</div><div class="v" id="solResult">4.0 kW</div></div></div>
+  </section>
+
+  <section id="eolica">
+    <h2>🌬️ Eólica</h2>
+    <div class="sub"><b>Recurso:</b> viento. <b>Transformación:</b> energía cinética del aire → giro mecánico → electricidad. <b>Límite:</b> Betz (máx. teórico 59.3%); turbinas reales capturan 35-45% (Cp).</div>
+    <div class="how">🔬 <b>Cómo funciona:</b> el rotor (aspas + buje) gira con el viento y transmite ese giro a un eje. En turbinas grandes, una <b>caja multiplicadora</b> acelera el giro lento del rotor (10-20 rpm) a la velocidad que necesita el generador (~1,500 rpm) — o se usa <b>accionamiento directo</b> (sin caja, generador de muchos polos, menos mantenimiento). La turbina no genera en todo rango de viento: arranca en <b>cut-in</b> (~3-4 m/s), alcanza su potencia nominal en <b>velocidad nominal</b> (~12-15 m/s) y se frena por seguridad en <b>cut-out</b> (~25 m/s) — la curva de potencia real se aplana, no crece como v³ indefinidamente.</div>
+    <div class="formula">P (kW) = ½ × ρ × A × v³ × Cp / 1000</div>
+    <div class="control"><label>Velocidad del viento <b id="eolVVal">9 m/s</b></label><input type="range" id="eolV" min="3" max="20" step="0.5" value="9"></div>
+    <div class="control"><label>Área de barrido del rotor <b id="eolAVal">2000 m²</b></label><input type="range" id="eolA" min="100" max="10000" step="100" value="2000"></div>
+    <div class="control"><label>Coeficiente de potencia Cp <b id="eolCpVal">0.40</b></label><input type="range" id="eolCp" min="0.1" max="0.593" step="0.01" value="0.40"></div>
+    <div class="result-box"><div class="result"><div class="k">Potencia generada</div><div class="v" id="eolResult">— kW</div></div></div>
+  </section>
+
+  <section id="hidraulica">
+    <h2>💧 Hidráulica</h2>
+    <div class="sub"><b>Recurso:</b> agua en movimiento con desnivel. <b>Transformación:</b> energía potencial/cinética → turbina → generador. <b>Límite:</b> disponibilidad de caudal constante y altura del salto.</div>
+    <div class="how">🔬 <b>Cómo funciona:</b> el agua cae o fluye a través de una turbina (Pelton/Francis/Kaplan según altura y caudal — ver Módulo 4) que convierte el movimiento en giro mecánico. Una central con <b>embalse</b> almacena agua y puede generar bajo demanda — funciona casi como una "batería" natural. Una central <b>de pasada (run-of-river)</b> no regula: genera según el caudal disponible del río en cada momento, sin capacidad de almacenar.</div>
+    <div class="formula">P (kW) = ρ × g × Q × h × η</div>
+    <div class="control"><label>Caudal (Q) <b id="hidQVal">10 m³/s</b></label><input type="range" id="hidQ" min="0.5" max="50" step="0.5" value="10"></div>
+    <div class="control"><label>Altura de caída (h) <b id="hidHVal">30 m</b></label><input type="range" id="hidH" min="2" max="200" step="2" value="30"></div>
+    <div class="result-box"><div class="result"><div class="k">Potencia generada (η=90%)</div><div class="v" id="hidResult">— kW</div></div></div>
+  </section>
+
+  <section id="geo">
+    <h2>♨️ Geotérmica</h2>
+    <div class="sub"><b>Recurso:</b> calor de la tierra (fluido geotérmico caliente). <b>Transformación:</b> calor → vapor/ciclo binario → turbina. <b>Límite:</b> termodinámico (Módulo 6) — a mayor temperatura del recurso, mayor eficiencia posible.</div>
+    <div class="how">🔬 <b>Cómo funciona:</b> un pozo de producción extrae fluido caliente (agua/vapor) de un yacimiento; según su temperatura se usa planta de vapor seco, flash o binaria (ver Módulo 6). El fluido ya "usado" se reinyecta por otro pozo — esto no solo evita contaminar aguas superficiales, sino que <b>recarga el yacimiento</b> y sostiene su producción a largo plazo. La <b>geotermia mejorada (EGS)</b> es la frontera actual: fractura roca caliente seca (sin fluido natural) e inyecta agua para crear un yacimiento artificial, ampliando dónde se puede hacer geotermia.</div>
+    <div class="formula">P (MW) = ṁ × Cp × (T_recurso − T_reinyección) × η_planta</div>
+    <div class="control"><label>Temperatura del recurso <b id="geoTVal">180 °C</b></label><input type="range" id="geoT" min="100" max="300" step="5" value="180"></div>
+    <div class="control"><label>Caudal del fluido geotérmico <b id="geoQVal">50 kg/s</b></label><input type="range" id="geoQ" min="5" max="300" step="5" value="50"></div>
+    <div class="result-box"><div class="result"><div class="k">Potencia generada (η planta≈12%)</div><div class="v" id="geoResult">— MW</div></div></div>
+  </section>
+
+  <section id="biogas">
+    <h2>🌱 Biogás y metano</h2>
+    <div class="sub"><b>Recurso:</b> materia orgánica (residuos agrícolas, ganaderos, rellenos sanitarios). <b>Transformación:</b> digestión anaeróbica → biogás (mezcla de metano CH₄ y CO₂) → combustión o motor generador. <b>Límite:</b> % de metano en el biogás define su poder calorífico.</div>
+    <div class="how">🔬 <b>Cómo funciona:</b> bacterias descomponen materia orgánica sin oxígeno en 4 etapas — <b>hidrólisis</b> (rompe moléculas grandes), <b>acidogénesis</b> (produce ácidos), <b>acetogénesis</b> (produce acetato) y <b>metanogénesis</b> (produce CH₄ final). El digestor se mantiene <b>mesofílico</b> (35-38°C, más estable) o <b>termofílico</b> (50-57°C, más rápido pero más sensible), con un <b>tiempo de retención hidráulica</b> típico de 20-40 días — el tiempo que la materia permanece dentro del digestor.</div>
+    <div class="formula">Energía (kWh/día) = Volumen biogás (m³/día) × %CH₄ × 9.5 kWh/m³</div>
+    <div class="control"><label>Volumen de biogás producido <b id="bioVVal">500 m³/día</b></label><input type="range" id="bioV" min="10" max="2000" step="10" value="500"></div>
+    <div class="control"><label>Contenido de metano (CH₄) <b id="bioCVal">60%</b></label><input type="range" id="bioC" min="40" max="75" step="1" value="60"></div>
+    <div class="result-box"><div class="result"><div class="k">Energía disponible diaria</div><div class="v" id="bioResult">— kWh/día</div></div></div>
+  </section>
+
+  <section id="h2">
+    <h2>🧪 Hidrógeno verde</h2>
+    <div class="sub"><b>Recurso:</b> electricidad renovable (excedente solar/eólico). <b>Transformación:</b> electrólisis del agua → hidrógeno (H₂), un vector de almacenamiento de energía, no una fuente primaria. <b>Límite:</b> eficiencia del electrolizador y el contenido energético del H₂ (33.3 kWh/kg).</div>
+    <div class="how">🔬 <b>Cómo funciona:</b> un electrolizador separa agua (H₂O) en H₂ y O₂ usando electricidad. <b>Alcalino:</b> la tecnología más madura y barata, pero responde lento a variaciones de potencia. <b>PEM (membrana de intercambio protónico):</b> más compacto y responde rápido — ideal para acoplarse a la variabilidad de solar/eólica. <b>SOEC (óxido sólido):</b> opera a alta temperatura (~700-800°C) con mayor eficiencia teórica, aún emergente. El "color" del H₂ describe su origen: <b>verde</b> (electrólisis con renovables), <b>azul</b> (gas natural con captura de CO₂) y <b>gris</b> (gas natural sin captura, el más común hoy).</div>
+    <div class="formula">H₂ (kg) = Energía eléctrica (kWh) × η_electrolizador / 33.3</div>
+    <div class="control"><label>Energía eléctrica disponible <b id="h2EVal">1000 kWh</b></label><input type="range" id="h2E" min="50" max="10000" step="50" value="1000"></div>
+    <div class="control"><label>Eficiencia del electrolizador <b id="h2EffVal">70%</b></label><input type="range" id="h2Eff" min="50" max="80" step="1" value="70"></div>
+    <div class="result-box"><div class="result"><div class="k">Hidrógeno producido</div><div class="v" id="h2Result">— kg</div></div></div>
+  </section>
+
+  <section id="otras">
+    <h2>🌊 Mareomotriz y almacenamiento</h2>
+    <div class="sub">Dos piezas clave del rompecabezas renovable que no encajan en una sola fórmula simple:</div>
+    <div class="info-card" style="margin-bottom:10px;">
+      <b>🌊 Mareomotriz:</b> aprovecha el movimiento predecible de las mareas o corrientes marinas (energía cinética/potencial del agua salada). Muy predecible a diferencia del viento o sol, pero de alto costo de instalación y pocos sitios geográficos aptos (grandes rangos de marea).
+    </div>
+    <div class="info-card">
+      <b>🔋 Almacenamiento:</b> baterías, bombeo hidráulico (pumped-hydro) o hidrógeno no "generan" energía — la <i>guardan</i> para cuando el sol no brilla o el viento no sopla. Es la pieza que hace viable un sistema 100% renovable, y siempre tiene pérdidas de eficiencia ida-vuelta (round-trip, típicamente 70-95% según tecnología).
+    </div>
+  </section>
+
+  <section id="compare" class="active" style="margin-top:0;">
+    <h2>📊 Comparativa de datos de ingeniería</h2>
+    <div class="sub">Referencia rápida para evaluar qué tecnología conviene en un proyecto — números típicos de la industria (varían por país y escala).</div>
+    <div class="table-wrap">
+      <table class="ref-table">
+        <tr><th>Tecnología</th><th>CAPEX ($/kW)</th><th>Vida útil</th><th>Huella aprox.</th></tr>
+        <tr><td>Solar fotovoltaica</td><td class="num">700 – 1,100</td><td class="num">25 – 30 años</td><td class="num">~10 m²/kW</td></tr>
+        <tr><td>Eólica terrestre</td><td class="num">1,200 – 1,700</td><td class="num">20 – 25 años</td><td class="num">Baja ocupación real, gran separación entre torres</td></tr>
+        <tr><td>Hidráulica</td><td class="num">1,500 – 4,000</td><td class="num">40 – 80 años</td><td class="num">Muy variable (embalse vs. pasada)</td></tr>
+        <tr><td>Geotérmica</td><td class="num">2,500 – 6,000</td><td class="num">25 – 30+ años</td><td class="num">Pequeña en superficie (pozos)</td></tr>
+        <tr><td>Biomasa / biogás</td><td class="num">2,000 – 4,000</td><td class="num">15 – 20 años</td><td class="num">Depende del cultivo/residuo energético</td></tr>
+        <tr><td>Electrolizador H₂</td><td class="num">500 – 1,400</td><td class="num">15 – 20 años (stack)</td><td class="num">Compacta, escalable</td></tr>
+      </table>
+    </div>
+    <div class="callout">💡 Nota cómo <b>hidráulica</b> y <b>geotérmica</b> piden más CAPEX inicial, pero su vida útil también es la más larga — esa es la razón por la que a veces siguen siendo la opción más barata a largo plazo (verás esto con LCOE en el Módulo 8).</div>
+  </section>
+
+  <section id="quiz" class="active" style="margin-top:0;">
+    <h2>🎯 Reto: ¿qué tecnología es?</h2>
+    <div class="sub">Responde las 4 preguntas. Necesitas al menos 3 correctas para continuar.</div>
+    <div id="quizContainer"></div>
+    <button id="checkQuizBtn">Comprobar respuestas</button>
+    <div id="feedback"></div>
+  </section>
+
+  <div class="nav-end">
+    <a href="modulo6.html">← Anterior</a>
+    <a href="modulo8.html" id="nextLink" style="visibility:hidden;">Siguiente: Evaluación de proyectos →</a>
+  </div>
+</div>
+
+<script>
+  // Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('section[id]').forEach(s => { if (s.id !== 'quiz' && s.id !== 'compare') s.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Solar
+  function updSolar() {
+    const G = parseFloat(document.getElementById('solG').value);
+    const A = parseFloat(document.getElementById('solA').value);
+    const E = parseFloat(document.getElementById('solE').value) / 100;
+    document.getElementById('solGVal').textContent = G.toFixed(2) + ' kW/m²';
+    document.getElementById('solAVal').textContent = A + ' m²';
+    document.getElementById('solEVal').textContent = (E * 100).toFixed(1) + '%';
+    document.getElementById('solResult').textContent = (G * A * E).toFixed(2) + ' kW';
+  }
+  ['solG', 'solA', 'solE'].forEach(id => document.getElementById(id).addEventListener('input', updSolar));
+  updSolar();
+
+  // Eolica
+  function updEolica() {
+    const v = parseFloat(document.getElementById('eolV').value);
+    const A = parseFloat(document.getElementById('eolA').value);
+    const Cp = parseFloat(document.getElementById('eolCp').value);
+    document.getElementById('eolVVal').textContent = v + ' m/s';
+    document.getElementById('eolAVal').textContent = A + ' m²';
+    document.getElementById('eolCpVal').textContent = Cp.toFixed(2);
+    const P = 0.5 * 1.225 * A * Math.pow(v, 3) * Cp / 1000;
+    document.getElementById('eolResult').textContent = P.toFixed(1) + ' kW';
+  }
+  ['eolV', 'eolA', 'eolCp'].forEach(id => document.getElementById(id).addEventListener('input', updEolica));
+  updEolica();
+
+  // Hidraulica
+  function updHidraulica() {
+    const Q = parseFloat(document.getElementById('hidQ').value);
+    const hgt = parseFloat(document.getElementById('hidH').value);
+    document.getElementById('hidQVal').textContent = Q.toFixed(1) + ' m³/s';
+    document.getElementById('hidHVal').textContent = hgt + ' m';
+    const P = 1000 * 9.81 * Q * hgt * 0.9 / 1000;
+    document.getElementById('hidResult').textContent = Math.round(P).toLocaleString() + ' kW';
+  }
+  ['hidQ', 'hidH'].forEach(id => document.getElementById(id).addEventListener('input', updHidraulica));
+  updHidraulica();
+
+  // Geotermica
+  function updGeo() {
+    const T = parseFloat(document.getElementById('geoT').value);
+    const Q = parseFloat(document.getElementById('geoQ').value);
+    document.getElementById('geoTVal').textContent = T + ' °C';
+    document.getElementById('geoQVal').textContent = Q + ' kg/s';
+    const Treinj = 70;
+    const dT = Math.max(0, T - Treinj);
+    const P = (Q * 4.186 * dT * 0.12) / 1000; // MW
+    document.getElementById('geoResult').textContent = P.toFixed(2) + ' MW';
+  }
+  ['geoT', 'geoQ'].forEach(id => document.getElementById(id).addEventListener('input', updGeo));
+  updGeo();
+
+  // Biogas
+  function updBiogas() {
+    const V = parseFloat(document.getElementById('bioV').value);
+    const C = parseFloat(document.getElementById('bioC').value) / 100;
+    document.getElementById('bioVVal').textContent = V + ' m³/día';
+    document.getElementById('bioCVal').textContent = (C * 100).toFixed(0) + '%';
+    const E = V * C * 9.5;
+    document.getElementById('bioResult').textContent = Math.round(E).toLocaleString() + ' kWh/día';
+  }
+  ['bioV', 'bioC'].forEach(id => document.getElementById(id).addEventListener('input', updBiogas));
+  updBiogas();
+
+  // H2
+  function updH2() {
+    const E = parseFloat(document.getElementById('h2E').value);
+    const eff = parseFloat(document.getElementById('h2Eff').value) / 100;
+    document.getElementById('h2EVal').textContent = E.toLocaleString() + ' kWh';
+    document.getElementById('h2EffVal').textContent = (eff * 100).toFixed(0) + '%';
+    const kg = (E * eff) / 33.3;
+    document.getElementById('h2Result').textContent = kg.toFixed(1) + ' kg';
+  }
+  ['h2E', 'h2Eff'].forEach(id => document.getElementById(id).addEventListener('input', updH2));
+  updH2();
+
+  // Quiz
+  const QUESTIONS = [
+    { q: '¿Qué tecnología está limitada por el "límite de Betz" (máx. teórico ~59%)?', opts: ['Solar fotovoltaica', 'Eólica', 'Hidráulica', 'Geotérmica'], correct: 1 },
+    { q: '¿Qué tecnología convierte electricidad en un vector de almacenamiento (no genera energía primaria)?', opts: ['Biogás', 'Mareomotriz', 'Hidrógeno verde', 'Solar térmica'], correct: 2 },
+    { q: 'Un embalse con más altura de caída (h) principalmente aumenta la potencia de una planta...', opts: ['Solar', 'Eólica', 'Hidráulica', 'Geotérmica'], correct: 2 },
+    { q: '¿Qué determina el poder calorífico del biogás producido por digestión anaeróbica?', opts: ['La velocidad del viento', 'El % de metano (CH₄)', 'La irradiancia solar', 'La altura del salto de agua'], correct: 1 },
+  ];
+  const quizContainer = document.getElementById('quizContainer');
+  const answers = new Array(QUESTIONS.length).fill(null);
+
+  QUESTIONS.forEach((q, qi) => {
+    const div = document.createElement('div');
+    div.className = 'quiz-q';
+    div.innerHTML = `<p>${qi + 1}. ${q.q}</p><div class="quiz-opts">${q.opts.map((o, oi) =>
+      `<div class="quiz-opt" data-q="${qi}" data-o="${oi}">${o}</div>`).join('')}</div>`;
+    quizContainer.appendChild(div);
+  });
+
+  quizContainer.addEventListener('click', (e) => {
+    const opt = e.target.closest('.quiz-opt');
+    if (!opt) return;
+    const qi = parseInt(opt.dataset.q);
+    const oi = parseInt(opt.dataset.o);
+    answers[qi] = oi;
+    document.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+  });
+
+  document.getElementById('checkQuizBtn').addEventListener('click', () => {
+    let correctCount = 0;
+    QUESTIONS.forEach((q, qi) => {
+      document.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(o => {
+        const oi = parseInt(o.dataset.o);
+        o.classList.remove('correct', 'wrong');
+        if (oi === q.correct) o.classList.add('correct');
+        else if (oi === answers[qi]) o.classList.add('wrong');
+      });
+      if (answers[qi] === q.correct) correctCount++;
+    });
+    const fb = document.getElementById('feedback');
+    fb.classList.add('show');
+    if (correctCount >= 3) {
+      const score = Math.round((correctCount / QUESTIONS.length) * 100);
+      fb.className = 'feedback show ok';
+      fb.textContent = `¡Bien! Acertaste ${correctCount}/${QUESTIONS.length}. Puntaje: ${score}/100.`;
+      saveProgress(score);
+      document.getElementById('nextLink').style.visibility = 'visible';
+    } else {
+      fb.className = 'feedback show no';
+      fb.textContent = `Acertaste ${correctCount}/${QUESTIONS.length}. Necesitas al menos 3. Revisa las respuestas marcadas e inténtalo de nuevo.`;
+    }
+  });
+
+  function saveProgress(score) {
+    const key = 'energia_progress';
+    let progress = {};
+    try { progress = JSON.parse(localStorage.getItem(key) || '{}'); } catch {}
+    const prevScore = (progress.modulo7 && progress.modulo7.score) || 0;
+    progress.modulo7 = { completed: true, score: Math.max(prevScore, score) };
+    localStorage.setItem(key, JSON.stringify(progress));
+  }
+</script>
+</body>
+</html>
