@@ -87,6 +87,42 @@
   .ref-table th, .ref-table td { text-align: left; padding: 8px 9px; border-bottom: 1px solid var(--border); vertical-align: top; }
   .ref-table th { color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .3px; }
   .ref-table td.num { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .diagram-wrap { background: #0b1220; border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin: 0 0 16px; }
+  .diagram-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .dlabel { font-size: 9.5px; fill: #94a3b8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .dlabel-strong { font-size: 10.5px; fill: #e2e8f0; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .dleader { stroke: #475569; stroke-width: 1; fill: none; }
+
+  @keyframes spin-eolica { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .rotor-eolica { transform-origin: 160px 102px; animation: spin-eolica 5s linear infinite; }
+
+  @keyframes wind-flow { 0% { transform: translateX(0); opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateX(75px); opacity: 0; } }
+  .wind-arrow { animation: wind-flow 2.2s linear infinite; }
+
+  @keyframes flow-dash { to { stroke-dashoffset: -32; } }
+  .penstock-flow { stroke-dasharray: 7 5; animation: flow-dash 0.9s linear infinite; }
+
+  @keyframes spin-turbine-hydro { to { transform: rotate(360deg); } }
+  .turbine-hydro { transform-origin: 290px 245px; animation: spin-turbine-hydro 1s linear infinite; }
+
+  @keyframes river-flow { 0% { transform: translateX(0); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateX(36px); opacity: 0; } }
+  .river-arrow { animation: river-flow 1.4s linear infinite; }
+
+  @keyframes water-shimmer { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+  .reservoir-surface { animation: water-shimmer 3s ease-in-out infinite; }
+
+  @keyframes bubble-rise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 0.9; } 85% { opacity: 0.7; } 100% { transform: translateY(-95px); opacity: 0; } }
+  .bio-bubble { animation: bubble-rise 3.4s ease-in infinite; }
+
+  @keyframes gasholder-breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.05); } }
+  .gasholder { transform-origin: 170px 141px; animation: gasholder-breathe 3.4s ease-in-out infinite; }
+
+  @keyframes pulse-flame { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+  .flame-icon { transform-origin: center; animation: pulse-flame 1.4s ease-in-out infinite; }
+
+  @keyframes pulse-bolt { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .bolt-icon { animation: pulse-bolt 1.2s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -127,6 +163,50 @@
     <h2>🌬️ Eólica</h2>
     <div class="sub"><b>Recurso:</b> viento. <b>Transformación:</b> energía cinética del aire → giro mecánico → electricidad. <b>Límite:</b> Betz (máx. teórico 59.3%); turbinas reales capturan 35-45% (Cp).</div>
     <div class="how">🔬 <b>Cómo funciona:</b> el rotor (aspas + buje) gira con el viento y transmite ese giro a un eje. En turbinas grandes, una <b>caja multiplicadora</b> acelera el giro lento del rotor (10-20 rpm) a la velocidad que necesita el generador (~1,500 rpm) — o se usa <b>accionamiento directo</b> (sin caja, generador de muchos polos, menos mantenimiento). La turbina no genera en todo rango de viento: arranca en <b>cut-in</b> (~3-4 m/s), alcanza su potencia nominal en <b>velocidad nominal</b> (~12-15 m/s) y se frena por seguridad en <b>cut-out</b> (~25 m/s) — la curva de potencia real se aplana, no crece como v³ indefinidamente.</div>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 400 300">
+        <circle cx="160" cy="102" r="84" fill="none" stroke="#334155" stroke-width="1" stroke-dasharray="4 4" opacity="0.5"/>
+
+        <line x1="20" y1="282" x2="380" y2="282" stroke="#334155" stroke-width="2"/>
+        <rect x="178" y="278" width="44" height="8" fill="#334155"/>
+        <polygon points="188,282 212,282 204,114 196,114" fill="#64748b"/>
+
+        <rect x="158" y="90" width="80" height="24" rx="6" fill="#94a3b8"/>
+        <rect x="163" y="96" width="18" height="12" rx="2" fill="#475569"/>
+        <rect x="186" y="96" width="18" height="12" rx="2" fill="#475569"/>
+
+        <g class="wind-arrow" style="animation-delay:0s"><path d="M28,86 L42,80 L42,92 Z" fill="#38bdf8" opacity="0.85"/></g>
+        <g class="wind-arrow" style="animation-delay:0.7s"><path d="M28,102 L42,96 L42,108 Z" fill="#38bdf8" opacity="0.85"/></g>
+        <g class="wind-arrow" style="animation-delay:1.4s"><path d="M28,118 L42,112 L42,124 Z" fill="#38bdf8" opacity="0.85"/></g>
+
+        <g class="rotor-eolica">
+          <path d="M156,102 L164,102 L161,18 Z" fill="#cbd5e1"/>
+          <path d="M156,102 L164,102 L161,18 Z" fill="#cbd5e1" transform="rotate(120 160 102)"/>
+          <path d="M156,102 L164,102 L161,18 Z" fill="#cbd5e1" transform="rotate(240 160 102)"/>
+        </g>
+        <circle cx="160" cy="102" r="8" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+
+        <line class="dleader" x1="245" y1="30" x2="205" y2="55"/>
+        <text x="248" y="33" class="dlabel-strong">Aspas (rotor)</text>
+        <text x="248" y="45" class="dlabel">barren un área circular</text>
+
+        <line class="dleader" x1="245" y1="102" x2="169" y2="102"/>
+        <text x="248" y="105" class="dlabel-strong">Buje (hub)</text>
+
+        <line class="dleader" x1="245" y1="130" x2="215" y2="102"/>
+        <text x="248" y="124" class="dlabel-strong">Góndola</text>
+        <text x="248" y="136" class="dlabel">caja multiplicadora +</text>
+        <text x="248" y="147" class="dlabel">generador</text>
+
+        <line class="dleader" x1="245" y1="200" x2="203" y2="200"/>
+        <text x="248" y="203" class="dlabel-strong">Torre</text>
+
+        <line class="dleader" x1="245" y1="278" x2="222" y2="280"/>
+        <text x="248" y="281" class="dlabel-strong">Cimentación</text>
+      </svg>
+    </div>
+
     <div class="formula">P (kW) = ½ × ρ × A × v³ × Cp / 1000</div>
     <div class="control"><label>Velocidad del viento <b id="eolVVal">9 m/s</b></label><input type="range" id="eolV" min="3" max="20" step="0.5" value="9"></div>
     <div class="control"><label>Área de barrido del rotor <b id="eolAVal">2000 m²</b></label><input type="range" id="eolA" min="100" max="10000" step="100" value="2000"></div>
@@ -138,6 +218,61 @@
     <h2>💧 Hidráulica</h2>
     <div class="sub"><b>Recurso:</b> agua en movimiento con desnivel. <b>Transformación:</b> energía potencial/cinética → turbina → generador. <b>Límite:</b> disponibilidad de caudal constante y altura del salto.</div>
     <div class="how">🔬 <b>Cómo funciona:</b> el agua cae o fluye a través de una turbina (Pelton/Francis/Kaplan según altura y caudal — ver Módulo 4) que convierte el movimiento en giro mecánico. Una central con <b>embalse</b> almacena agua y puede generar bajo demanda — funciona casi como una "batería" natural. Una central <b>de pasada (run-of-river)</b> no regula: genera según el caudal disponible del río en cada momento, sin capacidad de almacenar.</div>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 400 300">
+        <line x1="0" y1="280" x2="400" y2="280" stroke="#334155" stroke-width="2"/>
+
+        <rect x="10" y="75" width="145" height="205" fill="#1d4ed8" opacity="0.45"/>
+        <path class="reservoir-surface" d="M10,75 Q50,71 90,75 T155,75" stroke="#60a5fa" stroke-width="2" fill="none"/>
+
+        <polygon points="150,50 190,50 225,280 150,280" fill="#64748b" stroke="#475569" stroke-width="1"/>
+
+        <rect x="137" y="206" width="14" height="24" fill="#1e293b" stroke="#475569" stroke-width="1"/>
+        <line x1="140" y1="209" x2="140" y2="227" stroke="#475569" stroke-width="1"/>
+        <line x1="144" y1="209" x2="144" y2="227" stroke="#475569" stroke-width="1"/>
+        <line x1="148" y1="209" x2="148" y2="227" stroke="#475569" stroke-width="1"/>
+
+        <path d="M145,222 L286,244" stroke="#475569" stroke-width="16" stroke-linecap="round" fill="none"/>
+        <path class="penstock-flow" d="M145,222 L286,244" stroke="#7dd3fc" stroke-width="5" stroke-linecap="round" fill="none"/>
+
+        <rect x="256" y="220" width="112" height="60" rx="4" fill="#334155" stroke="#475569" stroke-width="1"/>
+        <circle cx="290" cy="245" r="15" fill="#0f172a" stroke="#94a3b8" stroke-width="2"/>
+        <g class="turbine-hydro">
+          <line x1="290" y1="233" x2="290" y2="257" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+          <line x1="278" y1="245" x2="302" y2="245" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+          <line x1="281.5" y1="236.5" x2="298.5" y2="253.5" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+          <line x1="281.5" y1="253.5" x2="298.5" y2="236.5" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
+        </g>
+        <line x1="305" y1="245" x2="313" y2="245" stroke="#94a3b8" stroke-width="4"/>
+        <rect x="313" y="233" width="34" height="24" rx="3" fill="#eab308" opacity="0.9"/>
+        <text x="330" y="249" text-anchor="middle" font-size="12" font-weight="700" fill="#1c1300">G</text>
+
+        <rect x="352" y="260" width="42" height="20" fill="#1d4ed8" opacity="0.4"/>
+        <g class="river-arrow" style="animation-delay:0s"><path d="M348,268 L360,268 L354,262 Z M348,268 L360,268 L354,274 Z" fill="#60a5fa"/></g>
+        <g class="river-arrow" style="animation-delay:0.5s"><path d="M362,268 L374,268 L368,262 Z M362,268 L374,268 L368,274 Z" fill="#60a5fa"/></g>
+
+        <text x="30" y="100" class="dlabel-strong">Embalse</text>
+        <text x="30" y="112" class="dlabel">agua almacenada</text>
+
+        <line class="dleader" x1="172" y1="30" x2="172" y2="50"/>
+        <text x="172" y="24" text-anchor="middle" class="dlabel-strong">Presa</text>
+
+        <line class="dleader" x1="205" y1="205" x2="222" y2="238"/>
+        <text x="205" y="188" text-anchor="middle" class="dlabel-strong">Tubería forzada</text>
+        <text x="205" y="199" text-anchor="middle" class="dlabel">(penstock)</text>
+
+        <line class="dleader" x1="262" y1="205" x2="284" y2="233"/>
+        <text x="258" y="199" text-anchor="middle" class="dlabel-strong">Turbina</text>
+
+        <line class="dleader" x1="340" y1="218" x2="330" y2="231"/>
+        <text x="342" y="212" text-anchor="middle" class="dlabel-strong">Generador</text>
+
+        <line class="dleader" x1="373" y1="248" x2="373" y2="260"/>
+        <text x="373" y="242" text-anchor="middle" class="dlabel-strong">Descarga</text>
+      </svg>
+    </div>
+
     <div class="formula">P (kW) = ρ × g × Q × h × η</div>
     <div class="control"><label>Caudal (Q) <b id="hidQVal">10 m³/s</b></label><input type="range" id="hidQ" min="0.5" max="50" step="0.5" value="10"></div>
     <div class="control"><label>Altura de caída (h) <b id="hidHVal">30 m</b></label><input type="range" id="hidH" min="2" max="200" step="2" value="30"></div>
@@ -158,6 +293,65 @@
     <h2>🌱 Biogás y metano</h2>
     <div class="sub"><b>Recurso:</b> materia orgánica (residuos agrícolas, ganaderos, rellenos sanitarios). <b>Transformación:</b> digestión anaeróbica → biogás (mezcla de metano CH₄ y CO₂) → combustión o motor generador. <b>Límite:</b> % de metano en el biogás define su poder calorífico.</div>
     <div class="how">🔬 <b>Cómo funciona:</b> bacterias descomponen materia orgánica sin oxígeno en 4 etapas — <b>hidrólisis</b> (rompe moléculas grandes), <b>acidogénesis</b> (produce ácidos), <b>acetogénesis</b> (produce acetato) y <b>metanogénesis</b> (produce CH₄ final). El digestor se mantiene <b>mesofílico</b> (35-38°C, más estable) o <b>termofílico</b> (50-57°C, más rápido pero más sensible), con un <b>tiempo de retención hidráulica</b> típico de 20-40 días — el tiempo que la materia permanece dentro del digestor.</div>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 400 330">
+        <line x1="0" y1="300" x2="400" y2="300" stroke="#334155" stroke-width="2"/>
+
+        <circle cx="45" cy="288" r="14" fill="#78350f" opacity="0.85"/>
+        <circle cx="62" cy="292" r="18" fill="#78350f" opacity="0.85"/>
+        <circle cx="78" cy="284" r="12" fill="#365314" opacity="0.85"/>
+        <text x="20" y="316" class="dlabel-strong">Materia orgánica</text>
+
+        <path d="M96,280 L109,265" stroke="#94a3b8" stroke-width="3" fill="none" marker-end="url(#arrowBio)"/>
+
+        <ellipse cx="170" cy="280" rx="60" ry="12" fill="#1e293b" stroke="#475569"/>
+        <rect x="110" y="170" width="120" height="110" fill="#334155" stroke="#475569" stroke-width="1"/>
+        <ellipse cx="170" cy="170" rx="60" ry="12" fill="#3f4c63" stroke="#475569"/>
+
+        <clipPath id="tankClip"><rect x="110" y="170" width="120" height="108"/></clipPath>
+        <g clip-path="url(#tankClip)">
+          <circle class="bio-bubble" cx="135" cy="265" r="3.5" fill="#fbbf24" style="animation-delay:0s"/>
+          <circle class="bio-bubble" cx="155" cy="270" r="4" fill="#fbbf24" style="animation-delay:0.6s"/>
+          <circle class="bio-bubble" cx="175" cy="262" r="3" fill="#fbbf24" style="animation-delay:1.2s"/>
+          <circle class="bio-bubble" cx="195" cy="272" r="4.5" fill="#fbbf24" style="animation-delay:1.8s"/>
+          <circle class="bio-bubble" cx="210" cy="266" r="3" fill="#fbbf24" style="animation-delay:2.4s"/>
+          <circle class="bio-bubble" cx="145" cy="275" r="3" fill="#fbbf24" style="animation-delay:3s"/>
+        </g>
+
+        <text x="170" y="264" text-anchor="middle" class="dlabel-strong" fill="#cbd5e1">Biodigestor</text>
+        <text x="170" y="275" text-anchor="middle" class="dlabel">anaeróbico</text>
+
+        <path class="gasholder" d="M120,170 Q120,112 170,112 Q220,112 220,170 Z" fill="#eab308" opacity="0.5" stroke="#ca8a04"/>
+        <text x="170" y="103" text-anchor="middle" class="dlabel-strong">Gasómetro</text>
+
+        <path d="M222,138 L278,116" stroke="#94a3b8" stroke-width="5" stroke-linecap="round" fill="none"/>
+
+        <rect x="280" y="95" width="70" height="48" rx="4" fill="#334155" stroke="#475569" stroke-width="1"/>
+        <text x="315" y="115" text-anchor="middle" class="dlabel-strong">Motor</text>
+        <text x="315" y="128" text-anchor="middle" class="dlabel-strong">CHP</text>
+
+        <path d="M348,102 L366,86" stroke="#94a3b8" stroke-width="3" fill="none" marker-end="url(#arrowBio)"/>
+        <path class="bolt-icon" d="M368,58 L356,84 L366,84 L360,102 L380,76 L368,76 Z" fill="#eab308"/>
+        <text x="368" y="49" text-anchor="middle" class="dlabel-strong">Electricidad</text>
+
+        <path d="M348,136 L366,152" stroke="#94a3b8" stroke-width="3" fill="none" marker-end="url(#arrowBio)"/>
+        <path class="flame-icon" d="M368,148 C376,158 376,170 368,177 C360,170 360,158 368,148 Z" fill="#f97316"/>
+        <text x="368" y="192" text-anchor="middle" class="dlabel-strong">Calor</text>
+
+        <path d="M170,282 L170,296" stroke="#94a3b8" stroke-width="3" fill="none" marker-end="url(#arrowBio)"/>
+        <rect x="148" y="298" width="44" height="20" rx="3" fill="#4d7c0f" opacity="0.8" stroke="#3f6212"/>
+        <text x="200" y="305" class="dlabel-strong">Digestato</text>
+        <text x="200" y="316" class="dlabel">(fertilizante)</text>
+
+        <defs>
+          <marker id="arrowBio" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#94a3b8"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
     <div class="formula">Energía (kWh/día) = Volumen biogás (m³/día) × %CH₄ × 9.5 kWh/m³</div>
     <div class="control"><label>Volumen de biogás producido <b id="bioVVal">500 m³/día</b></label><input type="range" id="bioV" min="10" max="2000" step="10" value="500"></div>
     <div class="control"><label>Contenido de metano (CH₄) <b id="bioCVal">60%</b></label><input type="range" id="bioC" min="40" max="75" step="1" value="60"></div>
