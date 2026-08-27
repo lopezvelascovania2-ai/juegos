@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memoria a Distancia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Karla:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --bg-0:#0a1f1a;
+  --bg-1:#123a30;
+  --bg-2:#0d2b23;
+  --edge:#071813;
+  --gold:#dba847;
+  --gold-ink:#3a2909;
+  --gold-soft:rgba(219,168,71,.18);
+  --teal:#6fa8ad;
+  --teal-soft:rgba(111,168,173,.18);
+  --cream:#f3ecd9;
+  --ink:#182620;
+  --muted:#9fb6ac;
+  --mismatch:#c8624a;
+  --font-display:'Fraunces', Georgia, serif;
+  --font-body:'Karla', system-ui, sans-serif;
+  --font-mono:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  min-height:100dvh;
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,.05), transparent 60%),
+    var(--bg-0);
+  color:var(--cream);
+  font-family:var(--font-body);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px 16px;
+}
+#app{ width:100%; max-width:520px; }
+.eyebrow{
+  text-transform:uppercase;
+  letter-spacing:.16em;
+  font-size:.72rem;
+  font-weight:600;
+  color:var(--muted);
+  text-align:center;
+  margin:0 0 6px;
+}
+h1{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:clamp(1.7rem,5vw,2.3rem);
+  text-align:center;
+  margin:0 0 8px;
+  text-wrap:balance;
+  color:var(--cream);
+}
+.tagline{
+  text-align:center;
+  color:var(--muted);
+  font-size:.92rem;
+  max-width:40ch;
+  margin:0 auto 26px;
+  line-height:1.55;
+}
+.panel{
+  background:linear-gradient(180deg,var(--bg-1),var(--bg-2));
+  border:1px solid var(--edge);
+  border-radius:22px;
+  padding:22px;
+  box-shadow:0 24px 44px -22px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.avatar{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display); font-weight:600; font-size:1.05rem;
+  flex-shrink:0;
+}
+.avatar.p1{background:var(--gold-soft); color:var(--gold);}
+.avatar.p2{background:var(--teal-soft); color:var(--teal);}
+.name-form{display:flex; gap:12px; flex-direction:column;}
+input[type=text]{
+  width:100%;
+  padding:12px 14px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.25);
+  color:var(--cream);
+  font-family:var(--font-body);
+  font-size:1rem;
+}
+input[type=text]::placeholder{ color:var(--muted); }
+input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
+.btn{
+  appearance:none; border:none; cursor:pointer;
+  font-family:var(--font-body); font-weight:700; font-size:.95rem;
+  padding:12px 20px; border-radius:10px;
+  background:var(--gold); color:var(--gold-ink);
+  transition:transform .15s ease, filter .15s ease;
+}
+.btn:hover{filter:brightness(1.08);}
+.btn:active{transform:scale(.97);}
+.btn:focus-visible{outline:2px solid var(--cream); outline-offset:2px;}
+.btn.ghost{ background:transparent; color:var(--muted); font-weight:600; padding:8px 10px; text-decoration:underline; }
+.btn.block{ width:100%; }
+.scoreboard{ display:flex; gap:10px; margin-bottom:18px; }
+.chip{
+  flex:1; display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:14px;
+  background:rgba(0,0,0,.2); border:1px solid transparent; min-width:0;
+}
+.chip.active.p1{ border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft); }
+.chip.active.p2{ border-color:var(--teal); box-shadow:0 0 0 3px var(--teal-soft); }
+.chip-name{ font-weight:700; font-size:.88rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.chip-turn{ font-size:.66rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
+.chip-score{ margin-left:auto; font-family:var(--font-display); font-size:1.35rem; font-variant-numeric:tabular-nums; }
+.board{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.board.board-disabled{ opacity:.5; pointer-events:none; }
+.card-slot{ aspect-ratio:3/4; perspective:900px; }
+.card{
+  position:relative; width:100%; height:100%;
+  transform-style:preserve-3d;
+  transition:transform .45s cubic-bezier(.2,.8,.3,1);
+  cursor:pointer;
+}
+.card.flipped{ transform:rotateY(180deg); }
+.card.matched{ cursor:default; }
+.card.mismatch .face.front{ border-color:var(--mismatch); }
+.face{
+  position:absolute; inset:0; backface-visibility:hidden;
+  border-radius:12px; display:flex; align-items:center; justify-content:center;
+  border:2px solid transparent;
+}
+.face.back{
+  background:
+    repeating-linear-gradient(45deg, var(--gold-soft) 0 8px, transparent 8px 16px),
+    linear-gradient(145deg, var(--bg-1), var(--bg-2));
+  border-color:var(--edge);
+}
+.face.back::after{ content:"\2726"; color:var(--gold); font-size:1.1rem; opacity:.85; }
+.face.front{
+  transform:rotateY(180deg);
+  background:var(--cream); color:var(--ink);
+  font-size:clamp(1.5rem,6vw,2.1rem);
+  border-color:rgba(0,0,0,.06);
+}
+.card.matched .face.front{ background:var(--gold-soft); }
+.status-line{ text-align:center; margin-top:16px; color:var(--muted); font-size:.85rem; min-height:1.2em; }
+.last-move{
+  text-align:center; color:var(--muted); font-size:.82rem;
+  margin:0 0 16px; padding:8px 12px; border-radius:10px;
+  background:rgba(0,0,0,.18);
+}
+.last-move strong{ color:var(--cream); }
+.finished-banner{ text-align:center; margin-bottom:16px; }
+.finished-banner .winner{ font-family:var(--font-display); font-size:1.4rem; color:var(--gold); }
+.footer-actions{ display:flex; justify-content:center; align-items:center; gap:14px; margin-top:20px; flex-wrap:wrap; }
+.handoff-panel{
+  background:rgba(0,0,0,.22); border:1px solid var(--gold-soft);
+  border-radius:14px; padding:16px; margin-bottom:18px;
+}
+.handoff-title{ font-family:var(--font-display); font-size:1.15rem; color:var(--gold); margin:0 0 6px; }
+.handoff-hint{ color:var(--muted); font-size:.85rem; margin:0 0 12px; line-height:1.5; }
+.link-row{ display:flex; gap:8px; align-items:stretch; margin-top:10px; }
+.link-row input[type=text]{ font-family:var(--font-mono); font-size:.72rem; }
+.share-row{ text-align:center; margin-top:14px; }
+.divider{ display:flex; align-items:center; gap:10px; margin:20px 0 14px; color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; }
+.divider::before,.divider::after{ content:''; flex:1; height:1px; background:rgba(255,255,255,.12); }
+.code-box textarea{
+  width:100%; resize:vertical; min-height:56px;
+  padding:10px 12px; border-radius:10px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(0,0,0,.25); color:var(--cream);
+  font-family:var(--font-mono); font-size:.72rem; line-height:1.4;
+  margin-bottom:10px;
+}
+.code-error{ color:var(--mismatch); font-size:.8rem; min-height:1em; margin:6px 0 0; }
+@media (prefers-reduced-motion:reduce){ .card{ transition:none; } }
+@media (max-width:380px){ .board{ gap:7px; } .avatar{ width:32px; height:32px; font-size:.9rem; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SYMBOLS = ['🌵','🍩','🎈','🐙','🌈','🎧','🍉','🦋'];
+const HIDE_DELAY = 1100;
+
+let game = null;
+let view = 'setup';
+let revealed = [];
+let locked = false;
+let localPick = [];
+let mismatchTimer = null;
+let shareUrl = '';
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function shuffledDeck(){
+  const cards = [];
+  SYMBOLS.forEach(sym => { cards.push({symbol:sym, matched:false}); cards.push({symbol:sym, matched:false}); });
+  for(let i=cards.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [cards[i],cards[j]] = [cards[j],cards[i]];
+  }
+  return cards;
+}
+
+function toBase64Url(binaryStr){
+  return btoa(binaryStr).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function fromBase64Url(str){
+  let s = str.replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length % 4) s += '=';
+  return atob(s);
+}
+function encodeState(state){
+  const json = JSON.stringify(state);
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return toBase64Url(binary);
+}
+function decodeState(code){
+  const binary = fromBase64Url(code.trim());
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  const json = new TextDecoder().decode(bytes);
+  const s = JSON.parse(json);
+  if(!s || !s.players || !s.players.p1 || !s.players.p2 || !Array.isArray(s.deck) || s.deck.length !== 16 || !s.scores || (s.turn !== 'p1' && s.turn !== 'p2')){
+    throw new Error('invalid state');
+  }
+  return s;
+}
+
+function buildShareUrl(state){
+  return location.origin + location.pathname + '#s=' + encodeState(state);
+}
+
+function extractCode(raw){
+  raw = raw.trim();
+  const i = raw.indexOf('#s=');
+  return i !== -1 ? raw.slice(i + 3) : raw;
+}
+
+function render(){
+  document.getElementById('app').innerHTML = view === 'setup' ? renderSetup() : renderGame();
+  attachHandlers();
+}
+
+function renderCodeFallback(){
+  return `
+    <div class="divider"><span>¿Te compartieron un código sin enlace?</span></div>
+    <div class="code-box">
+      <textarea id="load-code-input" rows="2" placeholder="Pega aquí el enlace o el código que te enviaron"></textarea>
+      <button class="btn ghost" id="load-code-btn" type="button">Cargar</button>
+      <p class="code-error" id="load-error"></p>
+    </div>`;
+}
+
+function renderSetup(){
+  return `
+    <p class="eyebrow">Juego de memoria</p>
+    <h1>Memoria a Distancia</h1>
+    <p class="tagline">Un juego de parejas por turnos para jugar con alguien aunque estén lejos. Cuando termine tu turno, compartes un enlace y la otra persona sigue jugando desde ahí.</p>
+    <div class="panel">
+      <form class="name-form" id="create-form">
+        <input type="text" id="my-name" placeholder="Tu nombre" maxlength="18" autocomplete="off" required>
+        <input type="text" id="other-name" placeholder="Nombre de la otra persona" maxlength="18" autocomplete="off" required>
+        <button type="submit" class="btn block">Crear partida y jugar primero</button>
+      </form>
+      ${renderCodeFallback()}
+    </div>`;
+}
+
+function renderChip(role){
+  const name = game.players[role];
+  const active = view === 'playing' && !locked && game.turn === role;
+  return `
+    <div class="chip ${role} ${active ? 'active' : ''}">
+      <div class="avatar ${role}">${esc(name[0].toUpperCase())}</div>
+      <div style="min-width:0;">
+        <div class="chip-name">${esc(name)}</div>
+        <div class="chip-turn">${active ? 'Su turno' : ''}</div>
+      </div>
+      <div class="chip-score">${game.scores[role]}</div>
+    </div>`;
+}
+
+function renderCard(card, idx){
+  const flipped = card.matched || revealed.includes(idx);
+  const classes = ['card'];
+  if(flipped) classes.push('flipped');
+  if(card.matched) classes.push('matched');
+  if(locked && revealed.includes(idx)) classes.push('mismatch');
+  return `
+    <div class="card-slot">
+      <div class="${classes.join(' ')}" data-idx="${idx}">
+        <div class="face back"></div>
+        <div class="face front">${flipped ? card.symbol : ''}</div>
+      </div>
+    </div>`;
+}
+
+function renderLastMove(){
+  if(!game.lastMove) return '';
+  const { by, symbolA, symbolB, matched } = game.lastMove;
+  const name = esc(game.players[by]);
+  const outcome = matched ? '¡encontró pareja!' : 'no coincidieron.';
+  return `<p class="last-move"><strong>${name}</strong> volteó ${symbolA} y ${symbolB} — ${outcome}</p>`;
+}
+
+function shareButtonLabel(){
+  return (typeof navigator.share === 'function') ? 'Compartir turno' : 'Copiar enlace para enviar';
+}
+
+function renderGame(){
+  const board = game.deck.map((c,i) => renderCard(c,i)).join('');
+  let banner = '';
+  if(view === 'finished'){
+    const p1 = game.players.p1, p2 = game.players.p2;
+    const winner = game.scores.p1 === game.scores.p2 ? null : (game.scores.p1 > game.scores.p2 ? p1 : p2);
+    banner = `<div class="finished-banner"><div class="winner">${winner ? `¡Ganó ${esc(winner)}!` : '¡Empate!'}</div></div>`;
+  }
+  let handoffHtml = '';
+  if(view === 'handoff'){
+    const otherName = game.players[game.turn];
+    handoffHtml = `
+      <div class="handoff-panel">
+        <p class="handoff-title">Turno de ${esc(otherName)}</p>
+        <p class="handoff-hint">Comparte este enlace para que ${esc(otherName)} continúe la partida desde su dispositivo.</p>
+        <button class="btn block" id="share-btn" type="button">${shareButtonLabel()}</button>
+        <div class="link-row">
+          <input type="text" id="share-link" value="${esc(shareUrl)}" readonly>
+        </div>
+      </div>`;
+  }
+  let statusLine = '';
+  if(view === 'playing'){
+    const activeName = game.players[game.turn];
+    statusLine = locked ? 'Volteando de nuevo…' : `Es turno de ${esc(activeName)}: elige dos cartas.`;
+  } else if(view === 'handoff'){
+    statusLine = 'Comparte el enlace de arriba para que continúe la partida.';
+  }
+  return `
+    <p class="eyebrow">Juego de memoria</p>
+    <h1>Memoria a Distancia</h1>
+    <div class="panel">
+      <div class="scoreboard">
+        ${renderChip('p1')}
+        ${renderChip('p2')}
+      </div>
+      ${renderLastMove()}
+      ${banner}
+      ${handoffHtml}
+      <div class="board ${view !== 'playing' || locked ? 'board-disabled' : ''}">${board}</div>
+      <p class="status-line">${statusLine}</p>
+      <div class="footer-actions">
+        ${view === 'finished' ? '<button class="btn" id="rematch-btn" type="button">Jugar de nuevo</button>' : ''}
+        <button class="btn ghost" id="reset-btn" type="button">Empezar partida nueva</button>
+      </div>
+      ${renderCodeFallback()}
+    </div>`;
+}
+
+function attachHandlers(){
+  const app = document.getElementById('app');
+  const createForm = document.getElementById('create-form');
+  if(createForm){
+    createForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const myName = document.getElementById('my-name').value.trim();
+      const otherName = document.getElementById('other-name').value.trim();
+      if(!myName || !otherName) return;
+      startNewGame(myName, otherName);
+    });
+  }
+  const loadBtn = document.getElementById('load-code-btn');
+  if(loadBtn){
+    loadBtn.addEventListener('click', () => {
+      const input = document.getElementById('load-code-input');
+      tryLoadCode(input.value);
+    });
+  }
+  const shareBtn = document.getElementById('share-btn');
+  if(shareBtn){
+    shareBtn.addEventListener('click', () => shareTurn(shareBtn));
+  }
+  const rematchBtn = document.getElementById('rematch-btn');
+  if(rematchBtn){
+    rematchBtn.addEventListener('click', () => {
+      game.deck = shuffledDeck();
+      game.scores = {p1:0,p2:0};
+      game.lastMove = null;
+      revealed = [];
+      locked = false;
+      view = 'playing';
+      render();
+    });
+  }
+  const resetBtn = document.getElementById('reset-btn');
+  if(resetBtn){
+    resetBtn.addEventListener('click', () => {
+      if(confirm('¿Empezar una partida nueva? Se perderá el progreso actual.')){
+        clearTimeout(mismatchTimer);
+        game = null;
+        view = 'setup';
+        revealed = [];
+        locked = false;
+        history.replaceState(null, '', location.pathname);
+        render();
+      }
+    });
+  }
+  if(app){
+    app.querySelectorAll('.card').forEach(el => {
+      el.addEventListener('click', () => onCardClick(parseInt(el.dataset.idx, 10)));
+    });
+  }
+}
+
+function startNewGame(myName, otherName){
+  clearTimeout(mismatchTimer);
+  game = {
+    players: {p1: myName, p2: otherName},
+    turn: 'p1',
+    scores: {p1:0, p2:0},
+    deck: shuffledDeck(),
+    lastMove: null
+  };
+  revealed = [];
+  locked = false;
+  view = 'playing';
+  history.replaceState(null, '', location.pathname);
+  render();
+}
+
+function tryLoadCode(raw){
+  const errorEl = document.getElementById('load-error');
+  if(errorEl) errorEl.textContent = '';
+  if(!raw || !raw.trim()){
+    if(errorEl) errorEl.textContent = 'Pega un enlace o código primero.';
+    return;
+  }
+  try {
+    const decoded = decodeState(extractCode(raw));
+    clearTimeout(mismatchTimer);
+    game = decoded;
+    revealed = [];
+    locked = false;
+    view = decoded.deck.every(c => c.matched) ? 'finished' : 'playing';
+    history.replaceState(null, '', location.pathname);
+    render();
+  } catch(err){
+    if(errorEl) errorEl.textContent = 'Ese enlace o código no es válido. Revisa que lo copiaste completo.';
+  }
+}
+
+async function shareTurn(btn){
+  shareUrl = buildShareUrl(game);
+  const linkInput = document.getElementById('share-link');
+  if(linkInput) linkInput.value = shareUrl;
+  const otherName = game.players[game.turn];
+  if(typeof navigator.share === 'function'){
+    try {
+      await navigator.share({ title: 'Memoria a Distancia', text: `Te toca jugar, ${otherName}`, url: shareUrl });
+      return;
+    } catch(err){
+      // cancelled or unsupported payload; fall back to copy below
+    }
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      if(btn){
+        const original = btn.textContent;
+        btn.textContent = '¡Enlace copiado!';
+        setTimeout(() => { btn.textContent = original; }, 1800);
+      }
+    } catch(err){ /* clipboard unavailable; the link is still visible in the field below */ }
+  }
+}
+
+function onCardClick(idx){
+  if(view !== 'playing' || locked) return;
+  if(game.deck[idx].matched) return;
+  if(revealed.includes(idx)) return;
+  if(localPick.includes(idx)) return;
+  localPick.push(idx);
+  if(localPick.length === 1){
+    revealed = [idx];
+    render();
+    return;
+  }
+  const [a,b] = localPick;
+  localPick = [];
+  revealed = [a,b];
+  const match = game.deck[a].symbol === game.deck[b].symbol;
+  game.lastMove = { by: game.turn, symbolA: game.deck[a].symbol, symbolB: game.deck[b].symbol, matched: match };
+  if(match){
+    game.deck[a].matched = true;
+    game.deck[b].matched = true;
+    game.scores[game.turn] += 1;
+    revealed = [];
+    if(game.deck.every(c => c.matched)) view = 'finished';
+    render();
+  } else {
+    locked = true;
+    render();
+    mismatchTimer = setTimeout(() => {
+      revealed = [];
+      locked = false;
+      game.turn = game.turn === 'p1' ? 'p2' : 'p1';
+      view = 'handoff';
+      shareUrl = buildShareUrl(game);
+      render();
+    }, HIDE_DELAY);
+  }
+}
+
+function loadFromHash(){
+  const hash = location.hash;
+  if(hash && hash.startsWith('#s=')){
+    try {
+      const decoded = decodeState(hash.slice(3));
+      clearTimeout(mismatchTimer);
+      game = decoded;
+      revealed = [];
+      locked = false;
+      view = decoded.deck.every(c => c.matched) ? 'finished' : 'playing';
+      history.replaceState(null, '', location.pathname);
+      return true;
+    } catch(err){
+      return false;
+    }
+  }
+  return false;
+}
+
+window.addEventListener('hashchange', () => { loadFromHash(); render(); });
+
+(function boot(){
+  loadFromHash();
+  render();
+})();
+</script>
+</body>
+</html>
