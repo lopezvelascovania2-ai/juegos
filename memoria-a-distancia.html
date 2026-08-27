@@ -159,26 +159,19 @@ input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
 .finished-banner{ text-align:center; margin-bottom:16px; }
 .finished-banner .winner{ font-family:var(--font-display); font-size:1.4rem; color:var(--gold); }
 .footer-actions{ display:flex; justify-content:center; align-items:center; gap:14px; margin-top:20px; flex-wrap:wrap; }
-.handoff-panel{
-  background:rgba(0,0,0,.22); border:1px solid var(--gold-soft);
-  border-radius:14px; padding:16px; margin-bottom:18px;
-}
-.handoff-title{ font-family:var(--font-display); font-size:1.15rem; color:var(--gold); margin:0 0 6px; }
-.handoff-hint{ color:var(--muted); font-size:.85rem; margin:0 0 12px; line-height:1.5; }
-.link-row{ display:flex; gap:8px; align-items:stretch; margin-top:10px; }
-.link-row input[type=text]{ font-family:var(--font-mono); font-size:.72rem; }
-.share-row{ text-align:center; margin-top:14px; }
 .divider{ display:flex; align-items:center; gap:10px; margin:20px 0 14px; color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; }
 .divider::before,.divider::after{ content:''; flex:1; height:1px; background:rgba(255,255,255,.12); }
-.code-box textarea{
-  width:100%; resize:vertical; min-height:56px;
-  padding:10px 12px; border-radius:10px;
-  border:1px solid rgba(255,255,255,.16);
-  background:rgba(0,0,0,.25); color:var(--cream);
-  font-family:var(--font-mono); font-size:.72rem; line-height:1.4;
-  margin-bottom:10px;
-}
+.join-box{ display:flex; gap:8px; }
+.join-box input[type=text]{ flex:1; }
 .code-error{ color:var(--mismatch); font-size:.8rem; min-height:1em; margin:6px 0 0; }
+.room-row{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin-bottom:16px; padding:8px 14px; border-radius:12px;
+  background:rgba(0,0,0,.18);
+}
+.room-row .room-label{ font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600; }
+.room-row .room-code{ font-family:var(--font-mono); font-size:1.1rem; font-weight:700; letter-spacing:.06em; color:var(--gold); }
+.room-row .btn{ padding:6px 12px; font-size:.78rem; }
 @media (prefers-reduced-motion:reduce){ .card{ transition:none; } }
 @media (max-width:380px){ .board{ gap:7px; } .avatar{ width:32px; height:32px; font-size:.9rem; } }
 </style>
@@ -188,14 +181,20 @@ input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
 <script>
 const SYMBOLS = ['🌵','🍩','🎈','🐙','🌈','🎧','🍉','🦋'];
 const HIDE_DELAY = 1100;
+const POLL_MS = 2500;
+const KVDB_BASE = 'https://kvdb.io/DAWWWCZTe3hvz7MTaYpCHi';
+const ROOM_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
 let game = null;
+let roomCode = null;
+let myRole = null;
 let view = 'setup';
 let revealed = [];
 let locked = false;
 let localPick = [];
 let mismatchTimer = null;
-let shareUrl = '';
+let pollTimer = null;
+let pollBusy = false;
 
 function esc(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -211,40 +210,61 @@ function shuffledDeck(){
   return cards;
 }
 
-function toBase64Url(binaryStr){
-  return btoa(binaryStr).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-function fromBase64Url(str){
-  let s = str.replace(/-/g,'+').replace(/_/g,'/');
-  while(s.length % 4) s += '=';
-  return atob(s);
-}
-function encodeState(state){
-  const json = JSON.stringify(state);
-  const bytes = new TextEncoder().encode(json);
-  let binary = '';
-  bytes.forEach(b => { binary += String.fromCharCode(b); });
-  return toBase64Url(binary);
-}
-function decodeState(code){
-  const binary = fromBase64Url(code.trim());
-  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-  const json = new TextDecoder().decode(bytes);
-  const s = JSON.parse(json);
-  if(!s || !s.players || !s.players.p1 || !s.players.p2 || !Array.isArray(s.deck) || s.deck.length !== 16 || !s.scores || (s.turn !== 'p1' && s.turn !== 'p2')){
-    throw new Error('invalid state');
-  }
+function randomRoomCode(){
+  let s = '';
+  for(let i=0;i<5;i++) s += ROOM_CHARS[Math.floor(Math.random()*ROOM_CHARS.length)];
   return s;
 }
 
-function buildShareUrl(state){
-  return location.origin + location.pathname + '#s=' + encodeState(state);
+async function kvGet(code){
+  const res = await fetch(`${KVDB_BASE}/room-${code}`, { cache: 'no-store' });
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('kv-get-failed');
+  return res.json();
 }
 
-function extractCode(raw){
-  raw = raw.trim();
-  const i = raw.indexOf('#s=');
-  return i !== -1 ? raw.slice(i + 3) : raw;
+async function kvPut(code, state){
+  const res = await fetch(`${KVDB_BASE}/room-${code}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state)
+  });
+  if(!res.ok) throw new Error('kv-put-failed');
+}
+
+async function pushState(){
+  if(!roomCode || !game) return;
+  try { await kvPut(roomCode, game); } catch(err){ /* next poll or action will reconcile */ }
+}
+
+function stopPolling(){
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+}
+
+function startPolling(){
+  stopPolling();
+  pollTimer = setInterval(pollRoom, POLL_MS);
+}
+
+async function pollRoom(){
+  if(!roomCode || pollBusy) return;
+  pollBusy = true;
+  try {
+    const remote = await kvGet(roomCode);
+    if(remote && remote.rev > (game ? game.rev : -1)){
+      game = remote;
+      syncViewFromGame();
+      render();
+    }
+  } catch(err){ /* transient network hiccup; try again next tick */ }
+  pollBusy = false;
+}
+
+function syncViewFromGame(){
+  revealed = game.revealed || [];
+  locked = !!game.mismatchPending;
+  view = game.deck.every(c => c.matched) ? 'finished' : 'playing';
+  scheduleMismatchHideIfNeeded();
 }
 
 function render(){
@@ -252,39 +272,37 @@ function render(){
   attachHandlers();
 }
 
-function renderCodeFallback(){
-  return `
-    <div class="divider"><span>¿Te compartieron un código sin enlace?</span></div>
-    <div class="code-box">
-      <textarea id="load-code-input" rows="2" placeholder="Pega aquí el enlace o el código que te enviaron"></textarea>
-      <button class="btn ghost" id="load-code-btn" type="button">Cargar</button>
-      <p class="code-error" id="load-error"></p>
-    </div>`;
-}
-
 function renderSetup(){
   return `
     <p class="eyebrow">Juego de memoria</p>
     <h1>Memoria a Distancia</h1>
-    <p class="tagline">Un juego de parejas por turnos para jugar con alguien aunque estén lejos. Cuando termine tu turno, compartes un enlace y la otra persona sigue jugando desde ahí.</p>
+    <p class="tagline">Un juego de parejas por turnos para jugar con alguien aunque estén lejos. Crea una sala, comparte el código, y el tablero se actualiza solo para las dos.</p>
     <div class="panel">
       <form class="name-form" id="create-form">
         <input type="text" id="my-name" placeholder="Tu nombre" maxlength="18" autocomplete="off" required>
         <input type="text" id="other-name" placeholder="Nombre de la otra persona" maxlength="18" autocomplete="off" required>
-        <button type="submit" class="btn block">Crear partida y jugar primero</button>
+        <button type="submit" class="btn block">Crear sala y jugar primero</button>
       </form>
-      ${renderCodeFallback()}
+      <div class="divider"><span>o únete a una sala</span></div>
+      <form class="name-form" id="join-form">
+        <input type="text" id="join-name" placeholder="Tu nombre" maxlength="18" autocomplete="off" required>
+        <div class="join-box">
+          <input type="text" id="join-code" placeholder="Código de sala" maxlength="5" autocomplete="off" required style="text-transform:uppercase;">
+          <button type="submit" class="btn">Unirme</button>
+        </div>
+        <p class="code-error" id="join-error"></p>
+      </form>
     </div>`;
 }
 
 function renderChip(role){
   const name = game.players[role];
-  const active = view === 'playing' && !locked && game.turn === role;
+  const active = view === 'playing' && !locked && game.turn === role && game.players.p2;
   return `
     <div class="chip ${role} ${active ? 'active' : ''}">
-      <div class="avatar ${role}">${esc(name[0].toUpperCase())}</div>
+      <div class="avatar ${role}">${name ? esc(name[0].toUpperCase()) : '?'}</div>
       <div style="min-width:0;">
-        <div class="chip-name">${esc(name)}</div>
+        <div class="chip-name">${name ? esc(name) : 'Esperando…'}</div>
         <div class="chip-turn">${active ? 'Su turno' : ''}</div>
       </div>
       <div class="chip-score">${game.scores[role]}</div>
@@ -314,10 +332,6 @@ function renderLastMove(){
   return `<p class="last-move"><strong>${name}</strong> volteó ${symbolA} y ${symbolB} — ${outcome}</p>`;
 }
 
-function shareButtonLabel(){
-  return (typeof navigator.share === 'function') ? 'Compartir turno' : 'Copiar enlace para enviar';
-}
-
 function renderGame(){
   const board = game.deck.map((c,i) => renderCard(c,i)).join('');
   let banner = '';
@@ -326,44 +340,37 @@ function renderGame(){
     const winner = game.scores.p1 === game.scores.p2 ? null : (game.scores.p1 > game.scores.p2 ? p1 : p2);
     banner = `<div class="finished-banner"><div class="winner">${winner ? `¡Ganó ${esc(winner)}!` : '¡Empate!'}</div></div>`;
   }
-  let handoffHtml = '';
-  if(view === 'handoff'){
-    const otherName = game.players[game.turn];
-    handoffHtml = `
-      <div class="handoff-panel">
-        <p class="handoff-title">Turno de ${esc(otherName)}</p>
-        <p class="handoff-hint">Comparte este enlace para que ${esc(otherName)} continúe la partida desde su dispositivo.</p>
-        <button class="btn block" id="share-btn" type="button">${shareButtonLabel()}</button>
-        <div class="link-row">
-          <input type="text" id="share-link" value="${esc(shareUrl)}" readonly>
-        </div>
-      </div>`;
-  }
   let statusLine = '';
-  if(view === 'playing'){
+  if(!game.players.p2){
+    statusLine = 'Esperando a que se una la otra persona…';
+  } else if(view === 'playing'){
     const activeName = game.players[game.turn];
-    statusLine = locked ? 'Volteando de nuevo…' : `Es turno de ${esc(activeName)}: elige dos cartas.`;
-  } else if(view === 'handoff'){
-    statusLine = 'Comparte el enlace de arriba para que continúe la partida.';
+    const myTurn = myRole && game.turn === myRole;
+    if(locked){ statusLine = 'Volteando de nuevo…'; }
+    else if(myTurn){ statusLine = 'Es tu turno: elige dos cartas.'; }
+    else { statusLine = `Turno de ${esc(activeName)}…`; }
   }
+  const canClick = !!(myRole && view === 'playing' && !locked && game.turn === myRole && game.players.p2);
   return `
     <p class="eyebrow">Juego de memoria</p>
     <h1>Memoria a Distancia</h1>
     <div class="panel">
+      <div class="room-row">
+        <div><span class="room-label">Sala</span> <span class="room-code">${esc(roomCode)}</span></div>
+        <button class="btn ghost" id="copy-room-btn" type="button">Copiar código</button>
+      </div>
       <div class="scoreboard">
         ${renderChip('p1')}
         ${renderChip('p2')}
       </div>
       ${renderLastMove()}
       ${banner}
-      ${handoffHtml}
-      <div class="board ${view !== 'playing' || locked ? 'board-disabled' : ''}">${board}</div>
+      <div class="board ${canClick ? '' : 'board-disabled'}">${board}</div>
       <p class="status-line">${statusLine}</p>
       <div class="footer-actions">
-        ${view === 'finished' ? '<button class="btn" id="rematch-btn" type="button">Jugar de nuevo</button>' : ''}
-        <button class="btn ghost" id="reset-btn" type="button">Empezar partida nueva</button>
+        ${view === 'finished' && myRole ? '<button class="btn" id="rematch-btn" type="button">Jugar de nuevo</button>' : ''}
+        <button class="btn ghost" id="reset-btn" type="button">Salir de la sala</button>
       </div>
-      ${renderCodeFallback()}
     </div>`;
 }
 
@@ -376,43 +383,38 @@ function attachHandlers(){
       const myName = document.getElementById('my-name').value.trim();
       const otherName = document.getElementById('other-name').value.trim();
       if(!myName || !otherName) return;
-      startNewGame(myName, otherName);
+      createRoom(myName, otherName);
     });
   }
-  const loadBtn = document.getElementById('load-code-btn');
-  if(loadBtn){
-    loadBtn.addEventListener('click', () => {
-      const input = document.getElementById('load-code-input');
-      tryLoadCode(input.value);
+  const joinForm = document.getElementById('join-form');
+  if(joinForm){
+    joinForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = document.getElementById('join-name').value.trim();
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      if(!name || !code) return;
+      joinRoom(code, name);
     });
   }
-  const shareBtn = document.getElementById('share-btn');
-  if(shareBtn){
-    shareBtn.addEventListener('click', () => shareTurn(shareBtn));
+  const copyRoomBtn = document.getElementById('copy-room-btn');
+  if(copyRoomBtn){
+    copyRoomBtn.addEventListener('click', () => {
+      navigator.clipboard && navigator.clipboard.writeText(roomCode).then(() => {
+        const original = copyRoomBtn.textContent;
+        copyRoomBtn.textContent = '¡Copiado!';
+        setTimeout(() => { copyRoomBtn.textContent = original; }, 1500);
+      }).catch(() => {});
+    });
   }
   const rematchBtn = document.getElementById('rematch-btn');
   if(rematchBtn){
-    rematchBtn.addEventListener('click', () => {
-      game.deck = shuffledDeck();
-      game.scores = {p1:0,p2:0};
-      game.lastMove = null;
-      revealed = [];
-      locked = false;
-      view = 'playing';
-      render();
-    });
+    rematchBtn.addEventListener('click', startRematch);
   }
   const resetBtn = document.getElementById('reset-btn');
   if(resetBtn){
     resetBtn.addEventListener('click', () => {
-      if(confirm('¿Empezar una partida nueva? Se perderá el progreso actual.')){
-        clearTimeout(mismatchTimer);
-        game = null;
-        view = 'setup';
-        revealed = [];
-        locked = false;
-        history.replaceState(null, '', location.pathname);
-        render();
+      if(confirm('¿Salir de esta sala?')){
+        leaveRoom();
       }
     });
   }
@@ -423,70 +425,105 @@ function attachHandlers(){
   }
 }
 
-function startNewGame(myName, otherName){
-  clearTimeout(mismatchTimer);
-  game = {
-    players: {p1: myName, p2: otherName},
+async function createRoom(myName, otherName){
+  const code = randomRoomCode();
+  const state = {
+    rev: 1,
+    players: { p1: myName, p2: null },
     turn: 'p1',
-    scores: {p1:0, p2:0},
+    scores: { p1: 0, p2: 0 },
     deck: shuffledDeck(),
+    revealed: [],
+    mismatchPending: false,
+    pendingSince: null,
     lastMove: null
   };
-  revealed = [];
-  locked = false;
-  view = 'playing';
-  history.replaceState(null, '', location.pathname);
+  try {
+    await kvPut(code, state);
+  } catch(err){
+    alert('No se pudo crear la sala. Revisa tu conexión e intenta de nuevo.');
+    return;
+  }
+  roomCode = code;
+  myRole = 'p1';
+  game = state;
+  localStorage.setItem('mm_role_' + code, 'p1');
+  localStorage.setItem('mm_name_' + code, myName);
+  localStorage.setItem('mm_last_room', code);
+  syncViewFromGame();
+  render();
+  startPolling();
+}
+
+async function joinRoom(code, name){
+  const errorEl = document.getElementById('join-error');
+  if(errorEl) errorEl.textContent = '';
+  let remote;
+  try {
+    remote = await kvGet(code);
+  } catch(err){
+    if(errorEl) errorEl.textContent = 'No se pudo conectar. Intenta de nuevo.';
+    return;
+  }
+  if(!remote){
+    if(errorEl) errorEl.textContent = 'No se encontró esa sala. Revisa el código.';
+    return;
+  }
+  const storedRole = localStorage.getItem('mm_role_' + code);
+  const storedName = localStorage.getItem('mm_name_' + code);
+  if(storedRole && remote.players[storedRole] === storedName){
+    roomCode = code; myRole = storedRole; game = remote;
+  } else if(!remote.players.p2){
+    remote.players.p2 = name;
+    remote.rev += 1;
+    try { await kvPut(code, remote); } catch(err){
+      if(errorEl) errorEl.textContent = 'No se pudo unir. Intenta de nuevo.';
+      return;
+    }
+    roomCode = code; myRole = 'p2'; game = remote;
+    localStorage.setItem('mm_role_' + code, 'p2');
+    localStorage.setItem('mm_name_' + code, name);
+    localStorage.setItem('mm_last_room', code);
+  } else {
+    if(errorEl) errorEl.textContent = 'Esa sala ya tiene dos jugadores.';
+    return;
+  }
+  syncViewFromGame();
+  render();
+  startPolling();
+}
+
+function leaveRoom(){
+  stopPolling();
+  clearTimeout(mismatchTimer);
+  if(roomCode){
+    localStorage.removeItem('mm_role_' + roomCode);
+    localStorage.removeItem('mm_name_' + roomCode);
+  }
+  localStorage.removeItem('mm_last_room');
+  roomCode = null; myRole = null; game = null;
+  view = 'setup'; revealed = []; locked = false;
   render();
 }
 
-function tryLoadCode(raw){
-  const errorEl = document.getElementById('load-error');
-  if(errorEl) errorEl.textContent = '';
-  if(!raw || !raw.trim()){
-    if(errorEl) errorEl.textContent = 'Pega un enlace o código primero.';
-    return;
-  }
-  try {
-    const decoded = decodeState(extractCode(raw));
-    clearTimeout(mismatchTimer);
-    game = decoded;
-    revealed = [];
-    locked = false;
-    view = decoded.deck.every(c => c.matched) ? 'finished' : 'playing';
-    history.replaceState(null, '', location.pathname);
-    render();
-  } catch(err){
-    if(errorEl) errorEl.textContent = 'Ese enlace o código no es válido. Revisa que lo copiaste completo.';
-  }
-}
-
-async function shareTurn(btn){
-  shareUrl = buildShareUrl(game);
-  const linkInput = document.getElementById('share-link');
-  if(linkInput) linkInput.value = shareUrl;
-  const otherName = game.players[game.turn];
-  if(typeof navigator.share === 'function'){
-    try {
-      await navigator.share({ title: 'Memoria a Distancia', text: `Te toca jugar, ${otherName}`, url: shareUrl });
-      return;
-    } catch(err){
-      // cancelled or unsupported payload; fall back to copy below
-    }
-  }
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      if(btn){
-        const original = btn.textContent;
-        btn.textContent = '¡Enlace copiado!';
-        setTimeout(() => { btn.textContent = original; }, 1800);
-      }
-    } catch(err){ /* clipboard unavailable; the link is still visible in the field below */ }
-  }
+async function startRematch(){
+  if(!myRole || !game) return;
+  game.deck = shuffledDeck();
+  game.scores = { p1: 0, p2: 0 };
+  game.revealed = [];
+  game.mismatchPending = false;
+  game.pendingSince = null;
+  game.lastMove = null;
+  game.turn = 'p1';
+  game.rev += 1;
+  syncViewFromGame();
+  render();
+  await pushState();
 }
 
 function onCardClick(idx){
-  if(view !== 'playing' || locked) return;
+  if(!myRole || view !== 'playing' || locked) return;
+  if(!game.players.p2 || game.turn !== myRole) return;
   if(game.deck[idx].matched) return;
   if(revealed.includes(idx)) return;
   if(localPick.includes(idx)) return;
@@ -505,48 +542,68 @@ function onCardClick(idx){
     game.deck[a].matched = true;
     game.deck[b].matched = true;
     game.scores[game.turn] += 1;
+    game.revealed = [];
+    game.mismatchPending = false;
+    game.pendingSince = null;
     revealed = [];
     if(game.deck.every(c => c.matched)) view = 'finished';
+    game.rev += 1;
     render();
+    pushState();
   } else {
+    game.revealed = [a,b];
+    game.mismatchPending = true;
+    game.pendingSince = Date.now();
     locked = true;
+    game.rev += 1;
     render();
-    mismatchTimer = setTimeout(() => {
-      revealed = [];
-      locked = false;
-      game.turn = game.turn === 'p1' ? 'p2' : 'p1';
-      view = 'handoff';
-      shareUrl = buildShareUrl(game);
-      render();
-    }, HIDE_DELAY);
+    pushState();
+    scheduleMismatchHideIfNeeded();
   }
 }
 
-function loadFromHash(){
-  const hash = location.hash;
-  if(hash && hash.startsWith('#s=')){
-    try {
-      const decoded = decodeState(hash.slice(3));
-      clearTimeout(mismatchTimer);
-      game = decoded;
-      revealed = [];
-      locked = false;
-      view = decoded.deck.every(c => c.matched) ? 'finished' : 'playing';
-      history.replaceState(null, '', location.pathname);
-      return true;
-    } catch(err){
-      return false;
+function scheduleMismatchHideIfNeeded(){
+  clearTimeout(mismatchTimer);
+  if(!(game && game.mismatchPending && game.pendingSince)) return;
+  if(myRole !== game.turn) return;
+  const wait = Math.max(150, HIDE_DELAY - (Date.now() - game.pendingSince));
+  mismatchTimer = setTimeout(() => {
+    if(!game || !game.mismatchPending) return;
+    game.revealed = [];
+    game.mismatchPending = false;
+    game.pendingSince = null;
+    game.turn = game.turn === 'p1' ? 'p2' : 'p1';
+    game.rev += 1;
+    revealed = [];
+    locked = false;
+    render();
+    pushState();
+  }, wait);
+}
+
+async function boot(){
+  const lastRoom = localStorage.getItem('mm_last_room');
+  if(lastRoom){
+    const role = localStorage.getItem('mm_role_' + lastRoom);
+    const name = localStorage.getItem('mm_name_' + lastRoom);
+    if(role && name){
+      try {
+        const remote = await kvGet(lastRoom);
+        if(remote && remote.players[role] === name){
+          roomCode = lastRoom; myRole = role; game = remote;
+          syncViewFromGame();
+          render();
+          startPolling();
+          return;
+        }
+      } catch(err){ /* fall through to setup */ }
+      localStorage.removeItem('mm_last_room');
     }
   }
-  return false;
+  render();
 }
 
-window.addEventListener('hashchange', () => { loadFromHash(); render(); });
-
-(function boot(){
-  loadFromHash();
-  render();
-})();
+boot();
 </script>
 </body>
 </html>
