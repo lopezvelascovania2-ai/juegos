@@ -83,6 +83,14 @@ h1{
 .avatar.p1{background:var(--gold-soft); color:var(--gold);}
 .avatar.p2{background:var(--teal-soft); color:var(--teal);}
 .name-form{display:flex; gap:12px; flex-direction:column;}
+.difficulty-row{ display:flex; gap:8px; }
+.diff-btn{
+  flex:1; appearance:none; cursor:pointer; text-align:center; line-height:1.4;
+  padding:10px 8px; border-radius:10px; font-family:var(--font-body); font-weight:600; font-size:.78rem;
+  background:rgba(0,0,0,.25); color:var(--muted); border:1px solid rgba(255,255,255,.14);
+  transition:all .15s ease;
+}
+.diff-btn.selected{ background:var(--gold-soft); color:var(--gold); border-color:var(--gold); }
 input[type=text]{
   width:100%;
   padding:12px 14px;
@@ -149,6 +157,8 @@ input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
   border-color:rgba(0,0,0,.06);
 }
 .card.matched .face.front{ background:var(--gold-soft); }
+.board.cols-6 .face.front{ font-size:clamp(1.1rem,4.5vw,1.6rem); }
+.board.cols-6 .face.back::after{ font-size:.9rem; }
 .status-line{ text-align:center; margin-top:16px; color:var(--muted); font-size:.85rem; min-height:1.2em; }
 .last-move{
   text-align:center; color:var(--muted); font-size:.82rem;
@@ -179,8 +189,7 @@ input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
 <body>
 <div id="app"></div>
 <script>
-const SYMBOLS = ['🌵','🍩','🎈','🐙','🌈','🎧','🍉','🦋'];
-const HIDE_DELAY = 2600;
+const SYMBOLS = ['🌵','🍩','🎈','🐙','🌈','🎧','🍉','🦋','🍄','🎲','🧩','🚀','🌻','🐝','🍀','🎨','🔥','⭐'];
 const POLL_MS = 2000;
 const KVDB_BASE = 'https://kvdb.io/DAWWWCZTe3hvz7MTaYpCHi';
 const ROOM_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -192,17 +201,18 @@ let view = 'setup';
 let revealed = [];
 let locked = false;
 let localPick = [];
-let mismatchTimer = null;
 let pollTimer = null;
 let pollBusy = false;
+let selectedPairs = 8;
 
 function esc(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function shuffledDeck(){
+function shuffledDeck(pairsCount){
+  const chosen = SYMBOLS.slice(0, pairsCount);
   const cards = [];
-  SYMBOLS.forEach(sym => { cards.push({symbol:sym, matched:false}); cards.push({symbol:sym, matched:false}); });
+  chosen.forEach(sym => { cards.push({symbol:sym, matched:false}); cards.push({symbol:sym, matched:false}); });
   for(let i=cards.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
     [cards[i],cards[j]] = [cards[j],cards[i]];
@@ -264,7 +274,6 @@ function syncViewFromGame(){
   revealed = game.revealed || [];
   locked = !!game.mismatchPending;
   view = game.deck.every(c => c.matched) ? 'finished' : 'playing';
-  scheduleMismatchHideIfNeeded();
 }
 
 function render(){
@@ -281,6 +290,11 @@ function renderSetup(){
       <form class="name-form" id="create-form">
         <input type="text" id="my-name" placeholder="Tu nombre" maxlength="18" autocomplete="off" required>
         <input type="text" id="other-name" placeholder="Nombre de la otra persona" maxlength="18" autocomplete="off" required>
+        <div class="difficulty-row">
+          <button type="button" class="diff-btn ${selectedPairs === 8 ? 'selected' : ''}" data-pairs="8">Fácil<br>16 cartas</button>
+          <button type="button" class="diff-btn ${selectedPairs === 12 ? 'selected' : ''}" data-pairs="12">Normal<br>24 cartas</button>
+          <button type="button" class="diff-btn ${selectedPairs === 18 ? 'selected' : ''}" data-pairs="18">Difícil<br>36 cartas</button>
+        </div>
         <button type="submit" class="btn block">Crear sala y jugar primero</button>
       </form>
       <div class="divider"><span>o únete a una sala</span></div>
@@ -333,6 +347,8 @@ function renderLastMove(){
 }
 
 function renderGame(){
+  const totalCards = game.deck.length;
+  const cols = totalCards <= 24 ? 4 : 6;
   const board = game.deck.map((c,i) => renderCard(c,i)).join('');
   let banner = '';
   if(view === 'finished'){
@@ -346,11 +362,14 @@ function renderGame(){
   } else if(view === 'playing'){
     const activeName = game.players[game.turn];
     const myTurn = myRole && game.turn === myRole;
-    if(locked){ statusLine = 'Volteando de nuevo…'; }
+    if(locked){ statusLine = 'Toca «Continuar» cuando ya viste las cartas.'; }
     else if(myTurn){ statusLine = 'Es tu turno: elige dos cartas.'; }
     else { statusLine = `Turno de ${esc(activeName)}…`; }
   }
   const canClick = !!(myRole && view === 'playing' && !locked && game.turn === myRole && game.players.p2);
+  const continueHtml = game.mismatchPending
+    ? '<button class="btn block" id="continue-btn" type="button" style="margin-bottom:16px;">Continuar</button>'
+    : '';
   return `
     <p class="eyebrow">Juego de memoria</p>
     <h1>Memoria a Distancia</h1>
@@ -365,7 +384,8 @@ function renderGame(){
       </div>
       ${renderLastMove()}
       ${banner}
-      <div class="board ${canClick ? '' : 'board-disabled'}">${board}</div>
+      ${continueHtml}
+      <div class="board ${cols === 6 ? 'cols-6' : ''} ${canClick ? '' : 'board-disabled'}" style="grid-template-columns:repeat(${cols},1fr);">${board}</div>
       <p class="status-line">${statusLine}</p>
       <div class="footer-actions">
         ${view === 'finished' && myRole ? '<button class="btn" id="rematch-btn" type="button">Jugar de nuevo</button>' : ''}
@@ -383,7 +403,16 @@ function attachHandlers(){
       const myName = document.getElementById('my-name').value.trim();
       const otherName = document.getElementById('other-name').value.trim();
       if(!myName || !otherName) return;
-      createRoom(myName, otherName);
+      createRoom(myName, otherName, selectedPairs);
+    });
+  }
+  const diffBtns = document.querySelectorAll('.diff-btn');
+  if(diffBtns.length){
+    diffBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedPairs = parseInt(btn.dataset.pairs, 10);
+        diffBtns.forEach(b => b.classList.toggle('selected', b === btn));
+      });
     });
   }
   const joinForm = document.getElementById('join-form');
@@ -410,6 +439,10 @@ function attachHandlers(){
   if(rematchBtn){
     rematchBtn.addEventListener('click', startRematch);
   }
+  const continueBtn = document.getElementById('continue-btn');
+  if(continueBtn){
+    continueBtn.addEventListener('click', continueTurn);
+  }
   const resetBtn = document.getElementById('reset-btn');
   if(resetBtn){
     resetBtn.addEventListener('click', () => {
@@ -425,17 +458,16 @@ function attachHandlers(){
   }
 }
 
-async function createRoom(myName, otherName){
+async function createRoom(myName, otherName, pairsCount){
   const code = randomRoomCode();
   const state = {
     rev: 1,
     players: { p1: myName, p2: null },
     turn: 'p1',
     scores: { p1: 0, p2: 0 },
-    deck: shuffledDeck(),
+    deck: shuffledDeck(pairsCount),
     revealed: [],
     mismatchPending: false,
-    pendingSince: null,
     lastMove: null
   };
   try {
@@ -495,7 +527,6 @@ async function joinRoom(code, name){
 
 function leaveRoom(){
   stopPolling();
-  clearTimeout(mismatchTimer);
   if(roomCode){
     localStorage.removeItem('mm_role_' + roomCode);
     localStorage.removeItem('mm_name_' + roomCode);
@@ -508,11 +539,10 @@ function leaveRoom(){
 
 async function startRematch(){
   if(!myRole || !game) return;
-  game.deck = shuffledDeck();
+  game.deck = shuffledDeck(game.deck.length / 2);
   game.scores = { p1: 0, p2: 0 };
   game.revealed = [];
   game.mismatchPending = false;
-  game.pendingSince = null;
   game.lastMove = null;
   game.turn = 'p1';
   game.rev += 1;
@@ -547,7 +577,6 @@ function onCardClick(idx){
     game.scores[game.turn] += 1;
     game.revealed = [];
     game.mismatchPending = false;
-    game.pendingSince = null;
     revealed = [];
     if(game.deck.every(c => c.matched)) view = 'finished';
     game.rev += 1;
@@ -556,32 +585,23 @@ function onCardClick(idx){
   } else {
     game.revealed = [a,b];
     game.mismatchPending = true;
-    game.pendingSince = Date.now();
     locked = true;
     game.rev += 1;
     render();
     pushState();
-    scheduleMismatchHideIfNeeded();
   }
 }
 
-function scheduleMismatchHideIfNeeded(){
-  clearTimeout(mismatchTimer);
-  if(!(game && game.mismatchPending && game.pendingSince)) return;
-  if(myRole !== game.turn) return;
-  const wait = Math.max(150, HIDE_DELAY - (Date.now() - game.pendingSince));
-  mismatchTimer = setTimeout(() => {
-    if(!game || !game.mismatchPending) return;
-    game.revealed = [];
-    game.mismatchPending = false;
-    game.pendingSince = null;
-    game.turn = game.turn === 'p1' ? 'p2' : 'p1';
-    game.rev += 1;
-    revealed = [];
-    locked = false;
-    render();
-    pushState();
-  }, wait);
+async function continueTurn(){
+  if(!game || !game.mismatchPending) return;
+  game.revealed = [];
+  game.mismatchPending = false;
+  game.turn = game.turn === 'p1' ? 'p2' : 'p1';
+  game.rev += 1;
+  revealed = [];
+  locked = false;
+  render();
+  await pushState();
 }
 
 async function boot(){
@@ -605,6 +625,10 @@ async function boot(){
   }
   render();
 }
+
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && roomCode) pollRoom();
+});
 
 boot();
 </script>
