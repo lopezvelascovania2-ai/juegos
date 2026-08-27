@@ -180,8 +180,8 @@ input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
 <div id="app"></div>
 <script>
 const SYMBOLS = ['🌵','🍩','🎈','🐙','🌈','🎧','🍉','🦋'];
-const HIDE_DELAY = 1100;
-const POLL_MS = 2500;
+const HIDE_DELAY = 2600;
+const POLL_MS = 2000;
 const KVDB_BASE = 'https://kvdb.io/DAWWWCZTe3hvz7MTaYpCHi';
 const ROOM_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -530,7 +530,10 @@ function onCardClick(idx){
   localPick.push(idx);
   if(localPick.length === 1){
     revealed = [idx];
+    game.revealed = [idx];
+    game.rev += 1;
     render();
+    pushState();
     return;
   }
   const [a,b] = localPick;
